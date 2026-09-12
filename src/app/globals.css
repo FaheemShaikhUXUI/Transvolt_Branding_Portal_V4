@@ -1,26 +1,693 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *, .theme-navy *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+/* ==========================================================================
+   Modern Overlay Floating Scrollbar (Zero Layout Reflow / No Shaking)
+   ========================================================================== */
+.overlay-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.overlay-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.overlay-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overlay-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.overlay-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.dark .overlay-scrollbar::-webkit-scrollbar-thumb,
+.theme-navy .overlay-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark .overlay-scrollbar:hover::-webkit-scrollbar-thumb,
+.theme-navy .overlay-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.25 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.25 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.3 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.3 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.3 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --border: oklch(0.3 0 0);
+  --input: oklch(0.3 0 0);
+  --ring: oklch(0.8 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.15 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.15 0 0);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+.theme-navy {
+  --background: oklch(0.18 0.05 255);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.23 0.05 255);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.23 0.05 255);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.6 0.15 255);
+  --primary-foreground: oklch(0.1 0.05 255);
+  --secondary: oklch(0.28 0.05 255);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.28 0.05 255);
+  --muted-foreground: oklch(0.7 0.05 255);
+  --accent: oklch(0.28 0.05 255);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --border: oklch(0.28 0.05 255);
+  --input: oklch(0.28 0.05 255);
+  --ring: oklch(0.6 0.15 255);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.18 0.05 255);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.6 0.15 255);
+  --sidebar-primary-foreground: oklch(0.1 0.05 255);
+  --sidebar-accent: oklch(0.28 0.05 255);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.28 0.05 255);
+  --sidebar-ring: oklch(0.6 0.15 255);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.bg-checkerboard {
+  background-color: #f6f6f6;
+  background-image: linear-gradient(45deg, #e5e5e5 25%, transparent 25%, transparent 75%, #e5e5e5 75%, #e5e5e5),
+                    linear-gradient(45deg, #e5e5e5 25%, #f6f6f6 25%, #f6f6f6 75%, #e5e5e5 75%, #e5e5e5);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+.dark .bg-checkerboard, .theme-navy .bg-checkerboard {
+  background-color: #1a2233;
+  background-image: linear-gradient(45deg, #26324c 25%, transparent 25%, transparent 75%, #26324c 75%, #26324c),
+                    linear-gradient(45deg, #26324c 25%, #1a2233 25%, #1a2233 75%, #26324c 75%, #26324c);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+@keyframes pageFadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.995);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.page-transition {
+  animation: pageFadeSlideIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform, filter;
+}
+
+/* Sleek Ultra-Thin Transparent Custom Scrollbar */
+html,
+body,
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(140, 140, 140, 0.25) transparent !important;
+}
+
+.dark,
+.dark body,
+.dark *,
+.theme-navy,
+.theme-navy body,
+.theme-navy * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece,
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.18) !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  transition: background-color 0.2s ease !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.38) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+.theme-navy ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+.theme-navy ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Transvolt Instant Solid Shifting Branding Color Dot (Green & Blue) */
+@keyframes brandShiftDot {
+  0%, 49.9% {
+    background-color: #548235;
+    box-shadow: 0 0 10px rgba(84, 130, 53, 0.8), 0 0 20px rgba(84, 130, 53, 0.45);
+  }
+  50%, 100% {
+    background-color: #4472C4;
+    box-shadow: 0 0 10px rgba(68, 114, 196, 0.8), 0 0 20px rgba(68, 114, 196, 0.45);
+  }
+}
+
+.brand-shifting-dot {
+  animation: brandShiftDot 2.4s step-end infinite;
+}
+
+/* Hide default Next.js dev overlay indicator */
+[data-nextjs-toast],
+nextjs-portal,
+#nextjs-dev-overlay {
+  display: none !important;
+}
+
+/* Glassmorphic Cards & Surface Tokens */
+.glass-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-tile,
+.theme-navy .glass-tile {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 
+    0 12px 30px -5px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.glass-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-tile:hover,
+.theme-navy .glass-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 35px -8px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* Force Plain Round Zero Everywhere (Strictly Disable Slashed / Cross-Lined Zero) */
+*, ::before, ::after {
+  font-variant-numeric: normal !important;
+  font-feature-settings: "zero" 0 !important;
+}
+
+@keyframes progress-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.animate-shimmer-fast {
+  animation: progress-shimmer 1.8s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   Smooth Circular Soft Gradient Theme Transition (View Transitions API)
+   ========================================================================== */
+@property --mask-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 99999;
+  /* 375px Wide (150% More Faded) Ultra-Deep Misty Feathered Gradient Mask */
+  -webkit-mask-image: radial-gradient(
+    circle at var(--theme-x, 50%) var(--theme-y, 50%),
+    #000 0%,
+    #000 calc(var(--mask-radius, 0px) - 375px),
+    rgba(0, 0, 0, 0.88) calc(var(--mask-radius, 0px) - 280px),
+    rgba(0, 0, 0, 0.65) calc(var(--mask-radius, 0px) - 200px),
+    rgba(0, 0, 0, 0.40) calc(var(--mask-radius, 0px) - 130px),
+    rgba(0, 0, 0, 0.18) calc(var(--mask-radius, 0px) - 70px),
+    rgba(0, 0, 0, 0.05) calc(var(--mask-radius, 0px) - 25px),
+    transparent var(--mask-radius, 0px)
+  );
+  mask-image: radial-gradient(
+    circle at var(--theme-x, 50%) var(--theme-y, 50%),
+    #000 0%,
+    #000 calc(var(--mask-radius, 0px) - 375px),
+    rgba(0, 0, 0, 0.88) calc(var(--mask-radius, 0px) - 280px),
+    rgba(0, 0, 0, 0.65) calc(var(--mask-radius, 0px) - 200px),
+    rgba(0, 0, 0, 0.40) calc(var(--mask-radius, 0px) - 130px),
+    rgba(0, 0, 0, 0.18) calc(var(--mask-radius, 0px) - 70px),
+    rgba(0, 0, 0, 0.05) calc(var(--mask-radius, 0px) - 25px),
+    transparent var(--mask-radius, 0px)
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+@keyframes themeCircularWaveExpand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.95;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+.theme-circular-wave-anim {
+  animation: themeCircularWaveExpand 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* ==========================================================================
+   Shinchan & Shiro Stepping Walk & Fast Sprint Animations
+   ========================================================================== */
+
+/* Shinchan & Shiro Smooth Walking Stepping Cycle */
+@keyframes shinchanWalkMaster {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(0px) rotate(-0.5deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+@keyframes shinchanSmoothLegLeft {
+  0%, 100% {
+    transform: rotate(-11deg);
+  }
+  50% {
+    transform: rotate(11deg);
+  }
+}
+
+@keyframes shinchanSmoothLegRight {
+  0%, 100% {
+    transform: rotate(11deg);
+  }
+  50% {
+    transform: rotate(-11deg);
+  }
+}
+
+/* Shiro Smooth Trotting Paws */
+@keyframes shiroSmoothLegsBack {
+  0%, 100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes shiroSmoothLegsFront {
+  0%, 100% {
+    transform: rotate(8deg);
+  }
+  50% {
+    transform: rotate(-8deg);
+  }
+}
+
+.shinchan-walk-master {
+  animation: shinchanWalkMaster 0.58s ease-in-out infinite;
+  will-change: transform;
+}
+
+.shinchan-smooth-leg-left {
+  animation: shinchanSmoothLegLeft 0.58s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  transform-origin: 21% 82%;
+  will-change: transform;
+}
+
+.shinchan-smooth-leg-right {
+  animation: shinchanSmoothLegRight 0.58s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  transform-origin: 35% 82%;
+  will-change: transform;
+}
+
+.shiro-smooth-legs-back {
+  animation: shiroSmoothLegsBack 0.58s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  transform-origin: 57% 85%;
+  will-change: transform;
+}
+
+.shiro-smooth-legs-front {
+  animation: shiroSmoothLegsFront 0.58s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  transform-origin: 73% 85%;
+  will-change: transform;
+}
+
+/* Rapid Panic Sprinting When Touched/Clicked */
+@keyframes shinchanSprintMaster {
+  0%, 100% {
+    transform: translateY(0px) rotate(12deg) scale(0.96);
+  }
+  50% {
+    transform: translateY(-6px) rotate(15deg) scale(0.96);
+  }
+}
+
+@keyframes shinchanSprintLegLeft {
+  0%, 100% {
+    transform: rotate(-24deg);
+  }
+  50% {
+    transform: rotate(24deg);
+  }
+}
+
+@keyframes shinchanSprintLegRight {
+  0%, 100% {
+    transform: rotate(24deg);
+  }
+  50% {
+    transform: rotate(-24deg);
+  }
+}
+
+@keyframes shiroSprintLegsBack {
+  0%, 100% {
+    transform: rotate(-16deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes shiroSprintLegsFront {
+  0%, 100% {
+    transform: rotate(16deg);
+  }
+  50% {
+    transform: rotate(-16deg);
+  }
+}
+
+.shinchan-sprint-master {
+  animation: shinchanSprintMaster 0.14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.shinchan-leg-left-sprint {
+  animation: shinchanSprintLegLeft 0.14s linear infinite;
+  transform-origin: 21% 82%;
+  will-change: transform;
+}
+
+.shinchan-leg-right-sprint {
+  animation: shinchanSprintLegRight 0.14s linear infinite;
+  transform-origin: 35% 82%;
+  will-change: transform;
+}
+
+.shiro-legs-back-sprint {
+  animation: shiroSprintLegsBack 0.14s linear infinite;
+  transform-origin: 57% 85%;
+  will-change: transform;
+}
+
+.shiro-legs-front-sprint {
+  animation: shiroSprintLegsFront 0.14s linear infinite;
+  transform-origin: 73% 85%;
+  will-change: transform;
+}
+
+@keyframes whistleNote1 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.7);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-34px) translateX(20px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.whistle-note-1 {
+  animation: whistleNote1 1.8s ease-in-out infinite;
+}
+
+@keyframes whistleNote2 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-40px) translateX(28px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.whistle-note-2 {
+  animation: whistleNote2 2.1s ease-in-out 0.8s infinite;
+}
+
+/* ==========================================================================
+   Small White Flying Birds Animations (Sky Empty Space)
+   ========================================================================== */
+@keyframes birdFlightAcross {
+  0% {
+    transform: translateX(-100px);
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px));
+  }
+}
+
+@keyframes birdWingFlap {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(-0.65);
+  }
+}
+
+@keyframes birdWaveFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(1.5deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-1.5deg);
+  }
+}
+
+.bird-flight-item {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+  animation-name: birdFlightAcross;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.bird-wave-inner {
+  animation-name: birdWaveFloat;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.bird-wing-svg {
+  animation-name: birdWingFlap;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transform-origin: 50% 60%;
+  will-change: transform;
 }
