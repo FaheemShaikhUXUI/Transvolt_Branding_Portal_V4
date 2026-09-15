@@ -12,6 +12,7 @@ import {
 } from "./photo-vault"
 import { getInitialSitePhotoAssets } from "./site-photos-seed"
 import { getInitialEmployeePhotoAssets } from "./employee-photos-seed"
+import { getInitialLogoAssets } from "./logo-seed"
 import { Palette, FileText, MonitorPlay, Monitor, Printer, IdCard, Car, Zap, Image as ImageIcon, LucideIcon, Type, Compass } from "lucide-react"
 
 const iconMap: Record<string, LucideIcon> = {
@@ -224,7 +225,12 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
           finalAssets = Object.values(grouped)
         }
 
-        // Ensure default Site and Employee seed assets exist
+        // Ensure default Logo, Site and Employee seed assets exist
+        const hasLogo = finalAssets.some((a) => a.category === "logo-color")
+        if (!hasLogo) {
+          finalAssets = [...getInitialLogoAssets(), ...finalAssets]
+        }
+
         const hasSite = finalAssets.some((a) => a.category === "photos" && a.subCategory === "Site")
         if (!hasSite) {
           finalAssets = [...finalAssets, ...getInitialSitePhotoAssets()]
