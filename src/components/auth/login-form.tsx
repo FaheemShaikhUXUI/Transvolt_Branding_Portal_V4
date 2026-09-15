@@ -6,9 +6,10 @@ import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Mail, Lock, Eye, EyeOff, KeyRound, Sparkles, ArrowRight } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, KeyRound, Sparkles, ArrowRight, Play } from "lucide-react"
 import { toast } from "sonner"
 import { RequestAccessModal } from "./request-access-modal"
+import { PresentationModal } from "./presentation-modal"
 
 function AnimatedWaveBackground() {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
@@ -283,6 +284,7 @@ export function LoginForm() {
 
   const [rememberMe, setRememberMe] = React.useState(true)
   const [isRequestAccessOpen, setIsRequestAccessOpen] = React.useState(false)
+  const [isPresentationOpen, setIsPresentationOpen] = React.useState(false)
 
   // Load configured credentials if custom
   React.useEffect(() => {
@@ -417,6 +419,55 @@ export function LoginForm() {
             <p>
               Always access the right asset, the latest version, and the approved brand standards—all in one place.
             </p>
+          </div>
+
+          {/* Highlighted Interactive Button: Watch Presentation & Benefits of this Portal */}
+          <div className="mt-6 sm:mt-7 max-w-lg">
+            <button
+              type="button"
+              id="login-watch-presentation-btn"
+              onClick={() => setIsPresentationOpen(true)}
+              className="group relative w-full overflow-hidden rounded-2xl p-[1.5px] transition-all duration-300 hover:scale-[1.015] active:scale-[0.99] cursor-pointer shadow-[0_4px_24px_rgba(16,185,129,0.22)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.42)] text-left"
+            >
+              {/* 1. Continuous Auto-Animated Rotating Conic Gradient Border */}
+              <span
+                className="absolute inset-[-1000%] animate-[spin_4.5s_linear_infinite]"
+                style={{
+                  background: "conic-gradient(from 90deg at 50% 50%, #10B981 0%, #06B6D4 25%, #3B82F6 50%, #8B5CF6 75%, #10B981 100%)",
+                }}
+              />
+
+              {/* 2. Inner Button Container with Deep Frosted Glass */}
+              <div className="relative flex items-center justify-between gap-3 sm:gap-4 rounded-[14.5px] bg-[#0c1427]/92 px-4 sm:px-5 py-3.5 backdrop-blur-xl transition-colors duration-300 group-hover:bg-[#0c1427]/80">
+                {/* Continuous Auto-Sweeping Specular Shimmer Sheen */}
+                <div
+                  className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmerSweep_3.2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/[0.12] to-transparent"
+                />
+
+                {/* Left Icon with Play/Presentation badge & subtle breathing glow */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/25 to-cyan-500/20 border border-emerald-400/40 text-emerald-300 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                  <Play className="h-4 w-4 text-emerald-300 fill-emerald-300/40 group-hover:scale-110 transition-transform duration-300 ml-0.5" />
+                </div>
+
+                {/* Text block */}
+                <div className="flex-1 text-left min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs sm:text-sm font-bold tracking-tight text-white group-hover:text-emerald-300 transition-colors">
+                      Watch Presentation & Benefits of this Portal
+                    </span>
+                    <Sparkles className="h-3 w-3 text-amber-300 animate-pulse shrink-0" />
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                    Explore portal overview, brand workflows & enterprise benefits
+                  </p>
+                </div>
+
+                {/* Right Arrow CTA Badge */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 border border-white/15 text-slate-300 group-hover:bg-gradient-to-r group-hover:from-emerald-500 group-hover:to-cyan-500 group-hover:text-white group-hover:border-emerald-400 transition-all duration-300 shadow-sm">
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -731,6 +782,13 @@ export function LoginForm() {
         <RequestAccessModal
           isOpen={isRequestAccessOpen}
           onClose={() => setIsRequestAccessOpen(false)}
+        />
+
+        {/* Presentation & Benefits Modal */}
+        <PresentationModal
+          isOpen={isPresentationOpen}
+          onClose={() => setIsPresentationOpen(false)}
+          onRequestAccess={() => setIsRequestAccessOpen(true)}
         />
 
       </div>
