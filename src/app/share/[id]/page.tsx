@@ -422,7 +422,9 @@ export default function ShareAssetPage() {
       return
     }
     if (!asset) return
-    const formatData = asset.formats[format]
+    const mimeType = MIME_MAP[format] || "application/octet-stream"
+    const element = document.createElement("a")
+    const formatData = (asset.formats as any)?.[format]
     if (formatData?.fileData) {
       if (formatData.fileData.startsWith("data:")) {
         fetch(formatData.fileData)
