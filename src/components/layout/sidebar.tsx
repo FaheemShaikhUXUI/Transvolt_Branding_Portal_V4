@@ -147,18 +147,17 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
                   "group relative flex items-center h-10 w-full px-1.5 rounded-xl text-sm transition-all duration-200 select-none overflow-hidden",
                   isActive
                     ? cn(
-                        // White Theme: Green fill bg with 15% opacity, Branding Green text & border
-                        "bg-[#548235]/15 text-[#548235] font-semibold border border-[#548235]/25 shadow-xs",
-                        // Dark Theme: Default dark sidebar active styling
-                        "dark:bg-sidebar-accent dark:text-sidebar-accent-foreground dark:border-transparent dark:shadow-xs"
+                        // White Theme: Clean Branding Green fill, text & border
+                        "bg-[#548235]/15 text-[#548235] font-semibold border border-[#548235]/30 shadow-xs",
+                        // Black Theme (Pure Black & Navy): High-contrast luminous Green highlight
+                        "dark:bg-[#548235]/30 dark:text-[#7ee249] dark:border-[#548235]/80 dark:shadow-[0_0_15px_rgba(84,130,53,0.35)]"
                       )
                     : cn(
                         // Base idle state
                         "border border-transparent text-sidebar-foreground/80",
-                        // White Theme: Nice modern hover effect with subtle green tint & soft border
+                        // Modern subtle hover effect
                         "hover:bg-[#548235]/[0.08] hover:text-[#548235] hover:border-[#548235]/20 hover:shadow-2xs",
-                        // Dark Theme: Standard dark hover styling
-                        "dark:hover:bg-sidebar-accent/60 dark:hover:text-sidebar-foreground dark:hover:border-transparent dark:hover:shadow-none"
+                        "dark:hover:bg-[#548235]/15 dark:hover:text-[#7ee249] dark:hover:border-[#548235]/30 dark:hover:shadow-none"
                       )
                 )}
               >
@@ -168,8 +167,8 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
                     className={cn(
                       "h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110",
                       isActive
-                        ? "text-[#548235] dark:text-primary"
-                        : "text-sidebar-foreground/75 group-hover:text-[#548235] dark:group-hover:text-sidebar-foreground"
+                        ? "text-[#548235] dark:text-[#7ee249]"
+                        : "text-sidebar-foreground/75 group-hover:text-[#548235] dark:group-hover:text-[#7ee249]"
                     )}
                   />
                 </div>
@@ -189,7 +188,7 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
                       className={cn(
                         "ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none shrink-0 transition-colors",
                         isActive
-                          ? "bg-[#548235]/20 text-[#548235] border border-[#548235]/30 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30"
+                          ? "bg-[#548235]/20 text-[#548235] border border-[#548235]/30 dark:bg-[#548235]/40 dark:text-[#7ee249] dark:border-[#548235]/60"
                           : "border border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
                       )}
                     >

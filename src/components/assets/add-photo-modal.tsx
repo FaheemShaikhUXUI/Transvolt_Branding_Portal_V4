@@ -721,9 +721,9 @@ export function AddPhotoModal({
       <DialogTrigger
         render={
           (trigger as React.ReactElement) || (
-            <Button className="bg-[#4472C4] hover:bg-[#365ca0] text-white gap-2 font-semibold shadow-sm cursor-pointer">
-              <Plus className="h-4 w-4" />
-              + Add
+            <Button className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer">
+              <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+              <span>Add Photo</span>
             </Button>
           )
         }

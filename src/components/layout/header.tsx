@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { Search, Users, LogOut, Menu, Smile } from "lucide-react"
+import { Search, LogOut, Menu, Smile } from "lucide-react"
 import { BrandLogo } from "./brand-logo"
 import { useAuth } from "@/lib/auth/auth-context"
 import { useUserAccess } from "@/lib/user-access/user-access-context"
@@ -88,38 +88,14 @@ export function Header() {
         {/* Notification Bell (Only visible to Super Admin) */}
         <NotificationBell />
 
-        <Tooltip>
-          <TooltipTrigger render={
-            <Button
-              id="header-user-access-btn"
-              variant="outline"
-              size="icon"
-              className="rounded-full"
-              onClick={() => openModal('active-users')}
-            />
-          }>
-            <Users className="h-4 w-4" />
-            <span className="sr-only">User Access</span>
-          </TooltipTrigger>
-          <TooltipContent>User Access Management</TooltipContent>
-        </Tooltip>
-
         <ThemeSelector />
-
-        <Tooltip>
-          <TooltipTrigger render={<Button variant="outline" size="icon" className="rounded-full" onClick={logout} />}>
-            <LogOut className="h-4 w-4" />
-            <span className="sr-only">Logout</span>
-          </TooltipTrigger>
-          <TooltipContent>Logout</TooltipContent>
-        </Tooltip>
 
         <Tooltip>
           <TooltipTrigger render={
             <button 
               id="header-avatar-btn" 
               className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full border border-border/80 hover:border-primary/50 bg-background/80 hover:bg-muted/40 transition-all cursor-pointer select-none" 
-              onClick={() => openModal('super-admin')} 
+              onClick={() => openModal(user?.role === "Super Admin" ? 'super-admin' : 'active-users')} 
             />
           }>
             <Avatar className="h-7 w-7 ring-2 ring-primary/20 shrink-0">
@@ -141,7 +117,7 @@ export function Header() {
           <TooltipContent>{user?.email} ({user?.role === "Super Admin" ? "Super Admin" : "In-House Person"})</TooltipContent>
         </Tooltip>
 
-        {/* 1) Small Smiley Button at Absolute Right Side to View Shinchan Animation Immediately */}
+        {/* Small Smiley Button to View Shinchan Animation */}
         <Tooltip>
           <TooltipTrigger
             onClick={(e) => {
@@ -164,6 +140,15 @@ export function Header() {
             <span className="sr-only">Shinchan Animation</span>
           </TooltipTrigger>
           <TooltipContent>Watch Shinchan Animation :)</TooltipContent>
+        </Tooltip>
+
+        {/* Logout (Complete Right Side) */}
+        <Tooltip>
+          <TooltipTrigger render={<Button variant="outline" size="icon" className="rounded-full" onClick={logout} />}>
+            <LogOut className="h-4 w-4" />
+            <span className="sr-only">Logout</span>
+          </TooltipTrigger>
+          <TooltipContent>Logout</TooltipContent>
         </Tooltip>
       </div>
     </header>

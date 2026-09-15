@@ -677,17 +677,17 @@ export function IdCardsTable() {
             </button>
           </div>
 
-          {/* + ID & Business Card Button */}
-          <button
+          {/* Add ID & Business Card Button */}
+          <Button
             onClick={() => {
               setSelectedRecordForEdit(null)
               setIsCreateModalOpen(true)
             }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer select-none"
+            className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5 stroke-[3]" />
-            <span>+ ID &amp; Business Card</span>
-          </button>
+            <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+            <span>Add ID &amp; Business Card</span>
+          </Button>
         </div>
       </div>
 

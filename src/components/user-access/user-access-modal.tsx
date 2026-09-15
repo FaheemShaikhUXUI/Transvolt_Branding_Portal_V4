@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useUserAccess } from "@/lib/user-access/user-access-context"
 import { useAccessRequests } from "@/lib/access-requests/access-request-context"
+import { useAuth } from "@/lib/auth/auth-context"
+import { isSuperAdminEmail } from "@/lib/auth/superadmin-credentials"
 import { TabSuperAdmin } from "./tab-super-admin"
 import { TabUserAccess } from "./tab-user-access"
 import { TabActiveUsers } from "./tab-active-users"
@@ -24,13 +26,24 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; description: st
 export function UserAccessModal() {
   const { isModalOpen, closeModal, defaultTab } = useUserAccess()
   const { pendingRequests } = useAccessRequests()
-  const [activeTab, setActiveTab] = React.useState<TabId>("super-admin")
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === "Super Admin" || (user?.email && isSuperAdminEmail(user.email))
+
+  const visibleTabs = React.useMemo(() => {
+    return TABS.filter((tab) => tab.id !== "super-admin" || isSuperAdmin)
+  }, [isSuperAdmin])
+
+  const [activeTab, setActiveTab] = React.useState<TabId>(isSuperAdmin ? "super-admin" : "active-users")
 
   React.useEffect(() => {
     if (isModalOpen) {
-      setActiveTab(defaultTab as TabId)
+      if (defaultTab === "super-admin" && !isSuperAdmin) {
+        setActiveTab("active-users")
+      } else {
+        setActiveTab((defaultTab as TabId) || (isSuperAdmin ? "super-admin" : "active-users"))
+      }
     }
-  }, [isModalOpen, defaultTab])
+  }, [isModalOpen, defaultTab, isSuperAdmin])
 
   // Close on Escape key
   React.useEffect(() => {
@@ -86,7 +99,7 @@ export function UserAccessModal() {
 
           {/* Tab Bar */}
           <div className="flex border-t border-border/40 px-6">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = activeTab === tab.id
               const isAccessRequests = tab.id === "access-requests"
               const pendingCount = pendingRequests.length
@@ -129,7 +142,7 @@ export function UserAccessModal() {
 
         {/* Tab Content */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {activeTab === "super-admin" && (
+          {activeTab === "super-admin" && isSuperAdmin && (
             <ScrollArea className="flex-1 min-h-0">
               <TabSuperAdmin />
             </ScrollArea>

@@ -32,9 +32,9 @@ export const navigationConfig = [
     icon: Type,
   },
   {
-    title: "Brand Philosophy",
-    href: "/brand-philosophy",
-    icon: Compass,
+    title: "Graphics Library",
+    href: "/graphics-library",
+    icon: Layers,
   },
   {
     title: "Letterhead",
@@ -42,9 +42,9 @@ export const navigationConfig = [
     icon: FileText,
   },
   {
-    title: "Presentation",
-    href: "/presentation",
-    icon: MonitorPlay,
+    title: "ID Cards & Business Cards",
+    href: "/id-business-cards",
+    icon: IdCard,
   },
   {
     title: "Digital Assets",
@@ -57,15 +57,14 @@ export const navigationConfig = [
     icon: Printer,
   },
   {
-    title: "ID Cards & Business Cards",
-    href: "/id-business-cards",
-    icon: IdCard,
+    title: "Presentation",
+    href: "/presentation",
+    icon: MonitorPlay,
   },
   {
-    title: "Organization Chart",
-    href: "/organization-chart",
-    icon: Network,
-    tag: "Hold",
+    title: "Photo Repository",
+    href: "/photos",
+    icon: ImageIcon,
   },
   {
     title: "Vehicle Branding",
@@ -78,13 +77,14 @@ export const navigationConfig = [
     icon: Zap,
   },
   {
-    title: "Photo Repository",
-    href: "/photos",
-    icon: ImageIcon,
+    title: "Organization Chart",
+    href: "/organization-chart",
+    icon: Network,
+    tag: "Hold",
   },
   {
-    title: "Graphics Library",
-    href: "/graphics-library",
-    icon: Layers,
+    title: "Brand Philosophy",
+    href: "/brand-philosophy",
+    icon: Compass,
   },
 ]

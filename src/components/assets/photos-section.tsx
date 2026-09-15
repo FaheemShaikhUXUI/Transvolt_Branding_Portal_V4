@@ -775,10 +775,10 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
           {activeTab === "EMPLOYEE" ? (
             <Button
               onClick={() => setIsAddEmployeeModalOpen(true)}
-              className="bg-[#4472C4] hover:bg-[#365ca0] text-white gap-2 font-semibold shadow-sm cursor-pointer h-10 px-4"
+              className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
-              + Add
+              <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+              <span>Add Employee Photo</span>
             </Button>
           ) : (
             <AddPhotoModal
@@ -786,9 +786,9 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
               open={isAddModalOpen}
               onOpenChange={setIsAddModalOpen}
               trigger={
-                <Button className="bg-[#4472C4] hover:bg-[#365ca0] text-white gap-2 font-semibold shadow-sm cursor-pointer h-10 px-4">
-                  <Plus className="h-4 w-4" />
-                  + Add
+                <Button className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer">
+                  <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+                  <span>Add Photo</span>
                 </Button>
               }
             />
@@ -827,10 +827,10 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                 setIsAddModalOpen(true)
               }
             }}
-            className="bg-[#4472C4] hover:bg-[#365ca0] text-white gap-2 font-semibold shadow-sm cursor-pointer"
+            className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            + Add {activeTab === "SITE" ? "Site" : activeTab === "EMPLOYEE" ? "Employee" : "Events"} Photo{activeTab === "EMPLOYEE" ? "" : "s"}
+            <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+            <span>Add {activeTab === "SITE" ? "Site" : activeTab === "EMPLOYEE" ? "Employee" : "Events"} Photo{activeTab === "EMPLOYEE" ? "" : "s"}</span>
           </Button>
         </div>
       ) : activeTab === "EMPLOYEE" ? (

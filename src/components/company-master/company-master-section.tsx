@@ -205,8 +205,8 @@ export function CompanyMasterSection() {
           <Dialog open={openAddModal} onOpenChange={setOpenAddModal}>
             <DialogTrigger
               render={
-                <Button className="h-10 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer">
-                  <Plus className="h-4 w-4 stroke-[2.5]" />
+                <Button className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer">
+                  <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
                   <span>Add Company</span>
                 </Button>
               }

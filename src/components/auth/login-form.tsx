@@ -266,6 +266,11 @@ function AnimatedWaveBackground() {
   )
 }
 
+import {
+  getSuperAdminCredentials,
+  isSuperAdminEmail,
+} from "@/lib/auth/superadmin-credentials"
+
 export function LoginForm() {
   const { login, isLoading } = useAuth()
   const [email, setEmail] = React.useState("faheem.s@transvolt.in")
@@ -278,6 +283,13 @@ export function LoginForm() {
 
   const [rememberMe, setRememberMe] = React.useState(true)
   const [isRequestAccessOpen, setIsRequestAccessOpen] = React.useState(false)
+
+  // Load configured credentials if custom
+  React.useEffect(() => {
+    const creds = getSuperAdminCredentials()
+    setEmail(creds.email)
+    setPassword(creds.password)
+  }, [])
 
   React.useEffect(() => {
     const origHtmlBg = document.documentElement.style.backgroundColor
@@ -302,7 +314,8 @@ export function LoginForm() {
     toast.loading(`Signing in with ${provider}...`, { id: "oauth-login" })
     setTimeout(async () => {
       toast.dismiss("oauth-login")
-      await login(email || "faheem.s@transvolt.in", password || "faheemmahi8080")
+      const creds = getSuperAdminCredentials()
+      await login(email || creds.email, password || creds.password)
       setIsSubmitting(false)
     }, 600)
   }
@@ -453,14 +466,14 @@ export function LoginForm() {
                     }}
                   />
                 </div>
-                {email.toLowerCase().includes("@transvolt.in") && (
+                {(email.toLowerCase().includes("@transvolt.in") || isSuperAdminEmail(email)) && (
                   <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 pt-0.5 animate-in fade-in">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
                     <span>
-                      {email.toLowerCase() === "faheem.s@transvolt.in"
+                      {isSuperAdminEmail(email)
                         ? "Transvolt Super Admin Account"
                         : "Transvolt In-House Person Account (@transvolt.in)"}
                     </span>

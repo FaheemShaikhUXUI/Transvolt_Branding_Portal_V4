@@ -319,10 +319,10 @@ export function GraphicsLibraryPage() {
         <div className="flex items-center gap-2.5 shrink-0 pt-1 sm:pt-0">
           <Button
             onClick={() => openAddCategoryModal()}
-            className="rounded-xl text-xs font-bold h-10 px-4 bg-[#4472C4] hover:bg-[#3b63ab] text-white shadow-sm gap-2 cursor-pointer transition-all active:scale-95"
+            className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            + Add Category
+            <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+            <span>Add Category</span>
           </Button>
         </div>
       </div>
@@ -524,10 +524,10 @@ export function GraphicsLibraryPage() {
           </p>
           <Button
             onClick={() => openAddCategoryModal()}
-            className="rounded-xl text-xs font-bold h-10 px-5 bg-[#4472C4] hover:bg-[#3b63ab] text-white shadow-sm gap-2 cursor-pointer"
+            className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            + Add Category
+            <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
+            <span>Add Category</span>
           </Button>
         </div>
       ) : filteredCategoriesWithFiles.length === 0 ? (

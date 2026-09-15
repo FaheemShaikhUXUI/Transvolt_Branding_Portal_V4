@@ -28,7 +28,7 @@ const INITIAL_FORM: AccessFormState = {
   email: "",
   accessScope: "ALL_PAGES",
   selectedPages: [],
-  selectedPermissions: [],
+  selectedPermissions: ["VIEW_ALL"],
 }
 
 // ─── Lightweight & Smooth Arrow Flight Overlay ──────────────────────────────
@@ -479,7 +479,7 @@ export function TabUserAccess() {
         email: activeAccessRequest.email,
         accessScope: "ALL_PAGES",
         selectedPages: [],
-        selectedPermissions: ["DOWNLOAD", "VIEW_ALL", "SHARE"],
+        selectedPermissions: ["VIEW_ALL", "DOWNLOAD", "SHARE"],
       })
       setEmailTouched(true)
     } else if (editingUser) {

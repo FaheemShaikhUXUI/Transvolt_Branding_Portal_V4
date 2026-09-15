@@ -3,15 +3,15 @@ import { getUserType } from './permissions-utils'
 
 // --- Permission Definitions (single source of truth) ---
 export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
-  { key: 'UPLOAD', label: 'Upload', description: 'Allows the user to upload new assets to the portal.', dangerous: false },
-  { key: 'DELETE', label: 'Delete', description: 'Allows the user to permanently delete assets.', dangerous: true, dangerNote: 'Irreversible action — deleted assets cannot be recovered.' },
-  { key: 'REPLACE', label: 'Replace', description: 'Allows the user to replace existing assets with new versions.', dangerous: false },
-  { key: 'HOLD', label: 'Hold', description: 'Allows the user to place assets or content on hold/suspension.', dangerous: false },
+  { key: 'VIEW_ALL', label: 'View Only', description: 'Allows viewing of all content within the permitted page scope.', dangerous: false },
   { key: 'DOWNLOAD', label: 'Download', description: 'Allows the user to download available assets.', dangerous: false },
   { key: 'SHARE', label: 'Share', description: 'Allows the user to generate shareable links for assets.', dangerous: false },
+  { key: 'UPLOAD', label: 'Upload', description: 'Allows the user to upload new assets to the portal.', dangerous: false },
+  { key: 'REPLACE', label: 'Replace', description: 'Allows the user to replace existing assets with new versions.', dangerous: false },
+  { key: 'HOLD', label: 'Hold', description: 'Allows the user to place assets or content on hold/suspension.', dangerous: false },
+  { key: 'DELETE', label: 'Delete', description: 'Allows the user to permanently delete assets.', dangerous: true, dangerNote: 'Irreversible action — deleted assets cannot be recovered.' },
   { key: 'CREATE_GROUP', label: 'Create New Groups', description: 'Allows the user to create new groups or categories.', dangerous: true, dangerNote: 'Can affect overall content organisation.' },
   { key: 'ADD_COMPANY', label: 'Add Company', description: 'Allows the user to add companies to Company Master.', dangerous: true, dangerNote: 'Affects company-level data across the portal.' },
-  { key: 'VIEW_ALL', label: 'View Everything', description: 'Allows viewing of all content within the permitted page scope.', dangerous: false },
   { key: 'SITE_MANAGEMENT', label: 'Site Management', description: 'Allows higher-level portal configuration and management.', dangerous: true, dangerNote: 'Grants broad administrative control over portal settings.' },
 ]
 

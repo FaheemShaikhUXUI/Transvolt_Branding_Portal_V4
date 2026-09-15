@@ -6,8 +6,17 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { PERMISSION_DEFINITIONS } from "@/lib/user-access/mock-service"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth/auth-context"
+import { isSuperAdminEmail } from "@/lib/auth/superadmin-credentials"
+import { SuperAdminCredentialsCard } from "./super-admin-credentials-card"
 
 export function TabSuperAdmin() {
+  const { superAdminCredentials, user } = useAuth()
+  const isSuperAdmin = user?.role === "Super Admin" || (user?.email && isSuperAdminEmail(user.email))
+  const activeName = superAdminCredentials?.name || (isSuperAdmin ? user?.name : "Faheem Shaikh")
+  const activeEmail = superAdminCredentials?.email || (isSuperAdmin ? user?.email : "faheem.s@transvolt.in")
+  const isInHouse = activeEmail.toLowerCase().includes("@transvolt.in") || activeEmail.toLowerCase().includes("@transvolt")
+
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Super Admin Identity Card */}
@@ -22,15 +31,17 @@ export function TabSuperAdmin() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-bold tracking-tight text-foreground">Faheem Shaikh</h3>
+                <h3 className="text-lg font-bold tracking-tight text-foreground">{activeName}</h3>
                 <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-400/30 text-[10px] font-bold px-2">
                   SUPER ADMIN
                 </Badge>
                 <Badge className="bg-[#548235]/15 text-[#548235] border border-[#548235]/30 text-[10px] font-bold px-2">
-                  IN-HOUSE (@transvolt.in)
+                  {isInHouse ? "IN-HOUSE (@transvolt.in)" : "PORTAL MASTER"}
                 </Badge>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground font-mono">faheem.s@transvolt.in · Full Unrestricted Control · All Pages · All Permissions</p>
+              <p className="mt-0.5 text-xs text-muted-foreground font-mono">
+                {activeEmail} · Full Unrestricted Control · All Pages · All Permissions
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/8 px-3 py-1.5">
@@ -45,6 +56,9 @@ export function TabSuperAdmin() {
           <span className="font-medium text-foreground">Super Admin</span> has unrestricted access to all pages, assets, companies, groups and portal controls. All permissions are permanently enabled and cannot be individually disabled.
         </p>
       </div>
+
+      {/* Super Admin User ID & Password Management Setting Section (Exclusively rendered for Super Admin) */}
+      {isSuperAdmin && <SuperAdminCredentialsCard />}
 
       {/* Warning Note */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-500/8 px-4 py-3">

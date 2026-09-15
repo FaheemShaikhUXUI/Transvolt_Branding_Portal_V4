@@ -4,6 +4,13 @@ import * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { User } from "@/config/permissions"
 import { toast } from "sonner"
+import {
+  getSuperAdminCredentials,
+  isSuperAdminEmail,
+  verifySuperAdminPassword,
+  SUPERADMIN_CREDENTIALS_EVENT,
+  type SuperAdminCredentials,
+} from "./superadmin-credentials"
 
 interface AuthContextType {
   user: User | null
@@ -11,6 +18,7 @@ interface AuthContextType {
   logout: () => void
   isAuthenticated: boolean
   isLoading: boolean
+  superAdminCredentials: SuperAdminCredentials
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
@@ -18,8 +26,43 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [superAdminCreds, setSuperAdminCreds] = React.useState<SuperAdminCredentials>(() => getSuperAdminCredentials())
   const router = useRouter()
   const pathname = usePathname()
+
+  // Sync credentials on mount & listen for updates
+  React.useEffect(() => {
+    const syncCreds = () => {
+      const creds = getSuperAdminCredentials()
+      setSuperAdminCreds(creds)
+      
+      setUser((prevUser) => {
+        if (!prevUser) return prevUser
+        if (prevUser.role === "Super Admin" || isSuperAdminEmail(prevUser.email)) {
+          const updated = {
+            ...prevUser,
+            email: creds.email,
+            name: creds.name,
+            role: "Super Admin" as const,
+            userType: "INTERNAL" as const,
+            isInHouse: true,
+          }
+          localStorage.setItem("transvolt_user", JSON.stringify(updated))
+          return updated
+        }
+        return prevUser
+      })
+    }
+
+    syncCreds()
+
+    window.addEventListener(SUPERADMIN_CREDENTIALS_EVENT, syncCreds)
+    window.addEventListener("storage", syncCreds)
+    return () => {
+      window.removeEventListener(SUPERADMIN_CREDENTIALS_EVENT, syncCreds)
+      window.removeEventListener("storage", syncCreds)
+    }
+  }, [])
 
   React.useEffect(() => {
     // Check local storage for mock session
@@ -27,16 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedUser) {
       try {
         const parsed: User = JSON.parse(storedUser)
+        const creds = getSuperAdminCredentials()
         // Ensure in-house classification is recognized for @transvolt.in
         const isInternal = parsed.email?.toLowerCase().includes("@transvolt.in") || parsed.email?.toLowerCase().includes("@transvolt")
         if (isInternal) {
           parsed.userType = "INTERNAL"
           parsed.isInHouse = true
         }
-        if (parsed.email?.toLowerCase() === "faheem.s@transvolt.in" || parsed.email?.toLowerCase() === "admin") {
+        if (parsed.role === "Super Admin" || isSuperAdminEmail(parsed.email)) {
           parsed.role = "Super Admin"
-          parsed.name = "Faheem Shaikh"
-          parsed.email = "faheem.s@transvolt.in"
+          parsed.name = creds.name
+          parsed.email = creds.email
           parsed.userType = "INTERNAL"
           parsed.isInHouse = true
         }
@@ -76,30 +120,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .join(" ")
     }
 
-    // 1. Super Admin Authentication (faheem.s@transvolt.in / faheemmahi8080)
-    if (cleanEmail === "faheem.s@transvolt.in" || cleanEmail === "admin") {
+    // 1. Super Admin Authentication
+    if (isSuperAdminEmail(cleanEmail)) {
       // Validate password
-      if (
-        cleanPassword && 
-        cleanPassword !== "faheemmahi8080" && 
-        cleanPassword !== "admin" && 
-        cleanPassword !== "••••••••••••"
-      ) {
+      if (cleanPassword && !verifySuperAdminPassword(cleanPassword) && cleanPassword !== "••••••••••••") {
         toast.error("Invalid password for Super Admin account.")
         return false
       }
 
+      const activeCreds = getSuperAdminCredentials()
       const superAdminUser: User = {
         id: "faheem-superadmin",
-        name: "Faheem Shaikh",
-        email: "faheem.s@transvolt.in",
+        name: activeCreds.name || "Faheem Shaikh",
+        email: activeCreds.email,
         role: "Super Admin",
         userType: "INTERNAL",
         isInHouse: true,
       }
       setUser(superAdminUser)
       localStorage.setItem("transvolt_user", JSON.stringify(superAdminUser))
-      toast.success("Welcome, Faheem! Successfully authenticated as Super Admin.")
+      toast.success(`Welcome back, ${superAdminUser.name}! Successfully authenticated as Super Admin.`)
       router.push("/")
       return true
     }
@@ -153,7 +193,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated: !!user,
+        isLoading,
+        superAdminCredentials: superAdminCreds,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
