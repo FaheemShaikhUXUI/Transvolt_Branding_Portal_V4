@@ -262,21 +262,34 @@ export function ApprovedStatusBadge({
 export function AssetTile({ asset, onSelect }: AssetTileProps) {
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false)
   const [zoomLevel, setZoomLevel] = React.useState<number>(100)
-  const { replaceAssetFormat, toggleHoldAsset, deleteAsset } = useAssets()
+  const { replaceAssetFormat, toggleHoldAsset, deleteAsset, getCategoryConfig } = useAssets()
   const { user } = useAuth()
   
-  const imageFormat = asset.formats.PNG || asset.formats.JPG || asset.formats.SVG
-  const previewSrc = (asset.thumbnail && asset.thumbnail.trim().length > 0 && asset.thumbnail !== "mock-image-data")
-    ? asset.thumbnail 
-    : (asset.formats.PNG?.fileData && (asset.formats.PNG.fileData.startsWith("data:") || asset.formats.PNG.fileData.startsWith("http") || asset.formats.PNG.fileData.startsWith("/")))
+  const catConfig = getCategoryConfig?.(asset.category)
+  const isLogoAsset = asset.category === "logo-color" 
+    || catConfig?.slug === "logo-color"
+    || (catConfig as any)?.parentSlug === "logo-color"
+    || asset.category?.toLowerCase().includes("logo")
+    || asset.titleName?.toLowerCase().includes("logo")
+    || asset.name?.toLowerCase().includes("logo")
+
+  const imageFormat = isLogoAsset
+    ? (asset.formats.PNG || asset.formats.SVG || asset.formats.JPG)
+    : (asset.formats.PNG || asset.formats.JPG || asset.formats.SVG)
+
+  // 1. Never show black background - show transparent PNG in thumbnail
+  // 2. Show ONLY PNG files in Thumbnail (specially for Logo Tiles)
+  const previewSrc = isLogoAsset
+    ? (asset.formats.PNG?.fileData 
+        || (asset.formats as any)?.png?.fileData
+        || asset.formats.SVG?.fileData 
+        || (asset.thumbnail && !asset.thumbnail.startsWith("data:image/jpeg") ? asset.thumbnail : null)
+        || null)
+    : (asset.formats.PNG?.fileData && (!asset.thumbnail || asset.thumbnail.startsWith("data:image/jpeg")))
       ? asset.formats.PNG.fileData
-      : (asset.formats.JPG?.fileData && (asset.formats.JPG.fileData.startsWith("data:") || asset.formats.JPG.fileData.startsWith("http") || asset.formats.JPG.fileData.startsWith("/")))
-        ? asset.formats.JPG.fileData
-        : (asset.formats.SVG?.fileData && (asset.formats.SVG.fileData.startsWith("data:") || asset.formats.SVG.fileData.startsWith("http") || asset.formats.SVG.fileData.startsWith("<svg") || asset.formats.SVG.fileData.startsWith("/")))
-          ? asset.formats.SVG.fileData
-          : (imageFormat?.fileData && (imageFormat.fileData.startsWith("data:") || imageFormat.fileData.startsWith("http") || imageFormat.fileData.startsWith("/")))
-            ? imageFormat.fileData
-            : null
+      : (asset.thumbnail && asset.thumbnail.trim().length > 0 && asset.thumbnail !== "mock-image-data" && !asset.thumbnail.startsWith("data:image/jpeg"))
+        ? asset.thumbnail
+        : (asset.formats.PNG?.fileData || asset.formats.JPG?.fileData || asset.formats.SVG?.fileData || asset.thumbnail || null)
 
   const hasImage = !!previewSrc || (!!imageFormat?.fileData && imageFormat.fileData !== "mock-data" && imageFormat.fileData.length > 0)
   const isSuperAdmin = user?.role === "Super Admin"

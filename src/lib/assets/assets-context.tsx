@@ -115,12 +115,45 @@ export const optimizeDataUrlThumbnail = (
 const createThumbnail = async (file: File, isEventOrSite: boolean = false): Promise<string> => {
   if (typeof window === "undefined") return fileToDataURL(file)
   try {
+    const isTransparent = file.type === "image/png" || file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".png") || file.name.toLowerCase().endsWith(".svg")
     return new Promise((resolve) => {
       const url = URL.createObjectURL(file)
       const img = new Image()
       img.onload = () => {
         URL.revokeObjectURL(url)
         try {
+          if (isTransparent) {
+            // Never convert transparent images to JPEG (which turns transparent pixels black)
+            const maxDim = isEventOrSite ? 144 : 720
+            let w = img.naturalWidth || img.width
+            let h = img.naturalHeight || img.height
+            if (w <= maxDim && h <= maxDim) {
+              fileToDataURL(file).then(resolve)
+              return
+            }
+            if (w > h) {
+              h = Math.round((h * maxDim) / w)
+              w = maxDim
+            } else {
+              w = Math.round((w * maxDim) / h)
+              h = maxDim
+            }
+            const canvas = document.createElement("canvas")
+            canvas.width = w
+            canvas.height = h
+            const ctx = canvas.getContext("2d")
+            if (!ctx) {
+              fileToDataURL(file).then(resolve)
+              return
+            }
+            ctx.clearRect(0, 0, w, h)
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = "high"
+            ctx.drawImage(img, 0, 0, w, h)
+            resolve(canvas.toDataURL("image/png"))
+            return
+          }
+
           const maxDim = isEventOrSite ? 144 : 480
           const quality = isEventOrSite ? 0.65 : 0.8
           let w = img.naturalWidth || img.width
@@ -242,6 +275,33 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
           finalAssets = [...finalAssets, ...getInitialEmployeePhotoAssets()]
         }
 
+        // Clean up any black thumbnails and ensure Logo tiles use transparent PNG files
+        finalAssets = finalAssets.map((asset) => {
+          const catConfig = customCategories[asset.category] || assetPagesConfig[asset.category]
+          const isLogo = asset.category === "logo-color"
+            || (catConfig as any)?.parentSlug === "logo-color"
+            || (asset as any).parentSlug === "logo-color"
+            || asset.category?.toLowerCase().includes("logo")
+            || asset.titleName?.toLowerCase().includes("logo")
+            || asset.name?.toLowerCase().includes("logo")
+
+          const pngData = asset.formats?.PNG?.fileData || (asset.formats as any)?.png?.fileData
+
+          if (isLogo && pngData) {
+            return {
+              ...asset,
+              thumbnail: pngData,
+            }
+          }
+          if (asset.thumbnail?.startsWith("data:image/jpeg") && pngData) {
+            return {
+              ...asset,
+              thumbnail: pngData,
+            }
+          }
+          return asset
+        })
+
         // Set state & persist complete master assets to IndexedDB
         setAssets(finalAssets)
         saveAllAssetsToDB(finalAssets).catch(() => {})
@@ -319,8 +379,8 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
                       ...photo,
                       originalUrl: originalData,
                       thumbnailUrl: isExistingThumbFast ? photo.thumbnailUrl : (isExistingUrlFast ? photo.url : photo.thumbnailUrl || originalData),
-                      url: isExistingUrlFast ? photo.url : (isExistingThumbFast ? photo.thumbnailUrl : photo.url || originalData),
-                    }
+                      url: (isExistingUrlFast ? photo.url : (isExistingThumbFast ? photo.thumbnailUrl : photo.url || originalData)) || "",
+                    } as PhotoItem
                   }
                   return photo
                 })
@@ -573,30 +633,35 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
       const formats: Asset["formats"] = {}
       let thumbnail = ""
 
-      if (tile.files?.JPG?.file) {
-        const file = tile.files.JPG.file
-        const originalData = await fileToDataURL(file)
-        const thumb = await createThumbnail(file)
-        if (!thumbnail) thumbnail = thumb || originalData
-        formats.JPG = { fileName: file.name, fileData: originalData }
-      }
+      const isLogoSlug = slug === "logo-color" 
+        || parentSlug === "logo-color" 
+        || slug.toLowerCase().includes("logo") 
+        || categoryTitle.toLowerCase().includes("logo") 
+        || tile.name?.toLowerCase().includes("logo")
 
       if (tile.files?.PNG?.file) {
         const file = tile.files.PNG.file
         const originalData = await fileToDataURL(file)
-        const thumb = await createThumbnail(file)
-        if (!thumbnail) thumbnail = thumb || originalData
+        thumbnail = originalData
         formats.PNG = { fileName: file.name, fileData: originalData }
         if (!formats.JPG) {
           formats.JPG = { fileName: file.name.replace(/\.png$/i, ".jpg"), fileData: originalData }
         }
       }
 
+      if (tile.files?.JPG?.file) {
+        const file = tile.files.JPG.file
+        const originalData = await fileToDataURL(file)
+        const thumb = await createThumbnail(file)
+        if (!thumbnail && !isLogoSlug) thumbnail = thumb || originalData
+        formats.JPG = { fileName: file.name, fileData: originalData }
+      }
+
       if (tile.files?.SVG?.file) {
         const file = tile.files.SVG.file
         const text = await fileToDataURL(file)
         formats.SVG = { fileName: file.name, fileData: text }
-        if (!thumbnail) thumbnail = text
+        if (!thumbnail && !formats.PNG) thumbnail = text
       }
 
       if (tile.files?.PDF?.file) {
@@ -630,7 +695,9 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
           updatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
           createdBy: "Administrator",
           formats,
-          thumbnail: thumbnail || formats.PNG?.fileData || formats.JPG?.fileData || formats.SVG?.fileData || "",
+          thumbnail: (isLogoSlug && formats.PNG?.fileData)
+            ? formats.PNG.fileData 
+            : (thumbnail || formats.PNG?.fileData || formats.JPG?.fileData || formats.SVG?.fileData || ""),
           categoryNumber: tile.categoryNumber || tile.titleNumber,
           titleNumber: tile.titleNumber || tile.categoryNumber,
           titleName: tile.titleName,

@@ -1498,33 +1498,66 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
               <div>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Image Preview</span>
                 <div className="mt-1 aspect-video w-full rounded-lg bg-checkerboard border border-border p-2 flex items-center justify-center overflow-hidden">
-                  {activeSelectedAsset.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      src={activeSelectedAsset.thumbnail} 
-                      alt={activeSelectedAsset.name} 
-                      className="max-h-full max-w-full object-scale-down rounded-md" 
-                    />
-                  ) : (activeSelectedAsset.category === "presentation" || activeSelectedAsset.category?.toLowerCase().includes("presentation") || !!activeSelectedAsset.formats.PPT) ? (
-                    <div className="flex flex-col items-center justify-center gap-2 select-none">
-                      <PptIcon size={56} />
-                      <span className="text-[11px] font-extrabold text-[#D24726] tracking-wider uppercase">PowerPoint Deck</span>
-                    </div>
-                  ) : activeSelectedAsset.formats.WORD ? (
-                    <div className="flex flex-col items-center justify-center gap-2 select-none">
-                      <WordIcon size={56} />
-                      <span className="text-[11px] font-extrabold text-[#2B5797] tracking-wider uppercase">Word Document</span>
-                    </div>
-                  ) : activeSelectedAsset.formats.PDF ? (
-                    <div className="flex flex-col items-center justify-center gap-2 select-none">
-                      <PdfIcon size={56} />
-                      <span className="text-[11px] font-extrabold text-[#EF4444] tracking-wider uppercase">PDF Document</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground/60 font-medium">
-                      No Image Preview Available
-                    </span>
-                  )}
+                  {(() => {
+                    const isSelectedLogo = activeSelectedAsset.category === "logo-color"
+                      || activeSelectedAsset.category?.toLowerCase().includes("logo")
+                      || activeSelectedAsset.name?.toLowerCase().includes("logo")
+                      || activeSelectedAsset.titleName?.toLowerCase().includes("logo")
+                      || (getCategoryConfig(activeSelectedAsset.category) as any)?.parentSlug === "logo-color"
+
+                    const detailPreviewSrc = isSelectedLogo
+                      ? (activeSelectedAsset.formats.PNG?.fileData 
+                          || (activeSelectedAsset.formats as any)?.png?.fileData 
+                          || activeSelectedAsset.formats.SVG?.fileData 
+                          || (activeSelectedAsset.thumbnail && !activeSelectedAsset.thumbnail.startsWith("data:image/jpeg") ? activeSelectedAsset.thumbnail : null))
+                      : ((activeSelectedAsset.thumbnail && !activeSelectedAsset.thumbnail.startsWith("data:image/jpeg")) 
+                          ? activeSelectedAsset.thumbnail 
+                          : (activeSelectedAsset.formats.PNG?.fileData || activeSelectedAsset.thumbnail || activeSelectedAsset.formats.JPG?.fileData || null))
+
+                    if (detailPreviewSrc) {
+                      return (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                          src={detailPreviewSrc} 
+                          alt={activeSelectedAsset.name} 
+                          className="max-h-full max-w-full object-scale-down rounded-md" 
+                        />
+                      )
+                    }
+
+                    if (activeSelectedAsset.category === "presentation" || activeSelectedAsset.category?.toLowerCase().includes("presentation") || !!activeSelectedAsset.formats.PPT) {
+                      return (
+                        <div className="flex flex-col items-center justify-center gap-2 select-none">
+                          <PptIcon size={56} />
+                          <span className="text-[11px] font-extrabold text-[#D24726] tracking-wider uppercase">PowerPoint Deck</span>
+                        </div>
+                      )
+                    }
+
+                    if (activeSelectedAsset.formats.WORD) {
+                      return (
+                        <div className="flex flex-col items-center justify-center gap-2 select-none">
+                          <WordIcon size={56} />
+                          <span className="text-[11px] font-extrabold text-[#2B5797] tracking-wider uppercase">Word Document</span>
+                        </div>
+                      )
+                    }
+
+                    if (activeSelectedAsset.formats.PDF) {
+                      return (
+                        <div className="flex flex-col items-center justify-center gap-2 select-none">
+                          <PdfIcon size={56} />
+                          <span className="text-[11px] font-extrabold text-[#EF4444] tracking-wider uppercase">PDF Document</span>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <span className="text-xs text-muted-foreground/60 font-medium">
+                        No Image Preview Available
+                      </span>
+                    )
+                  })()}
                 </div>
               </div>
 
