@@ -226,9 +226,10 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Ensure default Logo, Site and Employee seed assets exist
-        const hasLogo = finalAssets.some((a) => a.category === "logo-color")
-        if (!hasLogo) {
-          finalAssets = [...getInitialLogoAssets(), ...finalAssets]
+        const logoAssets = finalAssets.filter((a) => a.category === "logo-color")
+        if (logoAssets.length < 6) {
+          const nonLogoAssets = finalAssets.filter((a) => a.category !== "logo-color")
+          finalAssets = [...getInitialLogoAssets(), ...nonLogoAssets]
         }
 
         const hasSite = finalAssets.some((a) => a.category === "photos" && a.subCategory === "Site")
