@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Mail, Lock, Eye, EyeOff, KeyRound, Sparkles, ArrowRight, Play } from "lucide-react"
 import { toast } from "sonner"
 import { RequestAccessModal } from "./request-access-modal"
-import { PresentationModal } from "./presentation-modal"
+import { InteractivePresentationDeck } from "@/components/presentation/interactive-presentation-deck"
 
 function AnimatedWaveBackground() {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
@@ -784,8 +784,8 @@ export function LoginForm() {
           onClose={() => setIsRequestAccessOpen(false)}
         />
 
-        {/* Presentation & Benefits Modal */}
-        <PresentationModal
+        {/* Interactive Full Presentation Deck */}
+        <InteractivePresentationDeck
           isOpen={isPresentationOpen}
           onClose={() => setIsPresentationOpen(false)}
           onRequestAccess={() => setIsRequestAccessOpen(true)}
