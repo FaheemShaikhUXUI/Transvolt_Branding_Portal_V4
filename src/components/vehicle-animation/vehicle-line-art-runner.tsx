@@ -8,8 +8,8 @@ const DRIVE_DURATION_MS = 22000 // 22 seconds for ultra-smooth, slow majestic gl
 
 export function VehicleLineArtRunner() {
   const pathname = usePathname()
-  // Determine if inside portal (any route except /login)
-  const isInsidePortal = pathname ? pathname !== "/login" : false
+  // Only render on Login Page; remove from inside the portal
+  const isLoginPage = pathname === "/login"
 
   const [isDriving, setIsDriving] = React.useState(false)
   const [screenWidth, setScreenWidth] = React.useState(1920)
@@ -18,13 +18,14 @@ export function VehicleLineArtRunner() {
 
   // Track window width safely
   React.useEffect(() => {
+    if (!isLoginPage) return
     const handleResize = () => {
       setScreenWidth(window.innerWidth)
     }
     handleResize()
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
-  }, [])
+  }, [isLoginPage])
 
   // Trigger vehicle drive sequence
   const startDrive = React.useCallback(() => {
@@ -45,6 +46,8 @@ export function VehicleLineArtRunner() {
 
   // Start the continuous loop on mount
   React.useEffect(() => {
+    if (!isLoginPage) return
+
     // Initial start after a brief 1.5s delay on page load
     const initialDelay = setTimeout(() => {
       startDrive()
@@ -62,14 +65,18 @@ export function VehicleLineArtRunner() {
       if (driveTimerRef.current) clearTimeout(driveTimerRef.current)
       window.removeEventListener("trigger-vehicle-line-art", handleCustomTrigger)
     }
-  }, [startDrive])
+  }, [isLoginPage, startDrive])
 
-  // Scale: 40% smaller inside the portal (0.6x), standard size on login page (1.0x)
-  const scaleMultiplier = isInsidePortal ? 0.6 : 1.0
+  // If inside the portal, do not render vehicle line art runner
+  if (!isLoginPage) {
+    return null
+  }
+
+  // Standard size on login page (1.0x)
   const baseWidth = Math.min(480, Math.max(320, screenWidth * 0.28))
-  const vehicleWidth = Math.round(baseWidth * scaleMultiplier)
-  const vehicleHeight = Math.round(44 * scaleMultiplier) // 26px inside portal, 44px on login
-  const wrapperHeight = Math.round(65 * scaleMultiplier) // 39px inside portal, 65px on login
+  const vehicleWidth = Math.round(baseWidth)
+  const vehicleHeight = 44
+  const wrapperHeight = 65
 
   return (
     <div
