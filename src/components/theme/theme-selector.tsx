@@ -65,10 +65,10 @@ export function ThemeSelector() {
         role="group"
         aria-label="Theme Selection"
       >
-        {/* Smooth Sliding Active Capsule Ring Highlight */}
+        {/* Smooth Sliding Active Capsule Ring Highlight (50% slower, gentle gliding) */}
         {mounted && (
           <span 
-            className="absolute top-1 left-1 w-9 h-6 rounded-full border-2 border-[#4472C4] shadow-[0_0_8px_rgba(68,114,196,0.35)] pointer-events-none transition-transform duration-300 ease-[cubic-bezier(0.34,1.45,0.64,1)]"
+            className="absolute top-1 left-1 w-9 h-6 rounded-full border-2 border-[#4472C4] shadow-[0_0_8px_rgba(68,114,196,0.35)] pointer-events-none transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]"
             style={{
               transform: `translateX(${activeIndex * 42}px)`
             }}

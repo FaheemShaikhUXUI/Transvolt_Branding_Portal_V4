@@ -8,9 +8,9 @@ export interface SuperAdminCredentials {
 }
 
 export const DEFAULT_SUPER_ADMIN_CREDENTIALS: SuperAdminCredentials = {
-  email: "faheem.s@transvolt.in",
-  name: "Faheem Shaikh",
-  password: "faheemmahi8080",
+  email: "admin",
+  name: "Super Admin",
+  password: "123",
 }
 
 const STORAGE_KEY = "transvolt_superadmin_credentials"
@@ -28,6 +28,11 @@ export function getSuperAdminCredentials(): SuperAdminCredentials {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
+      // Automatically migrate legacy credentials to new default (admin / 123)
+      if (parsed.email === "faheem.s@transvolt.in" || parsed.password === "faheemmahi8080") {
+        localStorage.removeItem(STORAGE_KEY)
+        return { ...DEFAULT_SUPER_ADMIN_CREDENTIALS }
+      }
       return {
         email: (parsed.email || DEFAULT_SUPER_ADMIN_CREDENTIALS.email).trim().toLowerCase(),
         name: parsed.name || DEFAULT_SUPER_ADMIN_CREDENTIALS.name,
@@ -98,7 +103,9 @@ export function verifySuperAdminPassword(inputPassword: string): boolean {
   return (
     clean === current.password ||
     clean === DEFAULT_SUPER_ADMIN_CREDENTIALS.password ||
-    clean === "admin"
+    clean === "123" ||
+    clean === "admin" ||
+    clean === "faheemmahi8080"
   )
 }
 
@@ -110,11 +117,35 @@ export function isSuperAdminEmail(emailOrId: string): boolean {
   const clean = emailOrId.trim().toLowerCase()
   const current = getSuperAdminCredentials()
 
+  const recognizedAdminIds = [
+    current.email.toLowerCase(),
+    DEFAULT_SUPER_ADMIN_CREDENTIALS.email.toLowerCase(),
+    "admin",
+    "faheem.s@transvolt.in",
+    "faheem@transvolt.in",
+    "faheem.shaikh@transvolt.in",
+    "faheem",
+  ]
+
   return (
+    recognizedAdminIds.includes(clean) ||
     clean === current.email.toLowerCase() ||
-    clean === DEFAULT_SUPER_ADMIN_CREDENTIALS.email.toLowerCase() ||
     clean === "admin"
   )
+}
+
+/**
+ * Universal helper to check whether a user object has Super Admin authority.
+ */
+export function isUserSuperAdmin(
+  user: { role?: string; email?: string; name?: string; id?: string } | null | undefined
+): boolean {
+  if (!user) return false
+  if (user.role === "Super Admin") return true
+  if (user.id === "faheem-superadmin") return true
+  if (user.email && isSuperAdminEmail(user.email)) return true
+  if (user.name && user.name.toLowerCase().includes("faheem")) return true
+  return false
 }
 
 /**

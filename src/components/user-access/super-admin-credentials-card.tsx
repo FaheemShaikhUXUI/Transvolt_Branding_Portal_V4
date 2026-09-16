@@ -31,16 +31,22 @@ import {
   type SuperAdminCredentials,
   DEFAULT_SUPER_ADMIN_CREDENTIALS,
   isSuperAdminEmail,
+  isUserSuperAdmin,
 } from "@/lib/auth/superadmin-credentials"
 import { useAuth } from "@/lib/auth/auth-context"
 import { cn } from "@/lib/utils"
 
-export function SuperAdminCredentialsCard() {
+interface SuperAdminCredentialsCardProps {
+  className?: string
+  defaultOpen?: boolean
+}
+
+export function SuperAdminCredentialsCard({ className, defaultOpen = false }: SuperAdminCredentialsCardProps = {}) {
   const { user } = useAuth()
-  const isSuperAdmin = user?.role === "Super Admin" || (user?.email && isSuperAdminEmail(user.email))
+  const isSuperAdmin = isUserSuperAdmin(user)
 
   const [creds, setCreds] = React.useState<SuperAdminCredentials>(() => getSuperAdminCredentials())
-  const [isEditing, setIsEditing] = React.useState(false)
+  const [isEditing, setIsEditing] = React.useState(defaultOpen)
   const [copied, setCopied] = React.useState(false)
 
   // Form states
@@ -160,7 +166,7 @@ export function SuperAdminCredentialsCard() {
   const handleResetToDefault = () => {
     if (
       window.confirm(
-        "Are you sure you want to reset Super Admin credentials to factory defaults (faheem.s@transvolt.in)?\n\nThis will reset your login email to 'faheem.s@transvolt.in' and password to factory default."
+        "Are you sure you want to reset Super Admin credentials to factory defaults (admin)?\n\nThis will reset your login user ID to 'admin' and password to '123'."
       )
     ) {
       const defaultCreds = resetSuperAdminCredentials()
@@ -185,7 +191,12 @@ export function SuperAdminCredentialsCard() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-b from-primary/[0.06] via-background to-background p-5 shadow-xs transition-all">
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-b from-primary/[0.06] via-background to-background p-5 shadow-xs transition-all",
+        className
+      )}
+    >
       {/* Glow accent */}
       <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
 
@@ -196,9 +207,9 @@ export function SuperAdminCredentialsCard() {
             <KeyRound className="h-5 w-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
-                Super Admin Credentials & Security Setting
+                Super Admin Credentials &amp; Security Setting
               </h4>
               <Badge
                 variant="outline"
@@ -206,6 +217,13 @@ export function SuperAdminCredentialsCard() {
               >
                 <ShieldCheck className="mr-1 h-3 w-3" />
                 Active Protection
+              </Badge>
+              <Badge
+                variant="outline"
+                className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold"
+              >
+                <Lock className="mr-1 h-2.5 w-2.5" />
+                Only Visible to Super Admin
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -330,12 +348,12 @@ export function SuperAdminCredentialsCard() {
                   required
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}
-                  placeholder="faheem.s@transvolt.in"
+                  placeholder="admin"
                   className="pl-9 text-xs sm:text-sm font-medium h-9 rounded-xl"
                 />
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Can be your Transvolt email (e.g. <span className="font-mono text-foreground">faheem.s@transvolt.in</span>) or an admin user handle.
+                Can be your user handle (default: <span className="font-mono text-foreground">admin</span>) or an official email.
               </p>
             </div>
 
@@ -377,7 +395,7 @@ export function SuperAdminCredentialsCard() {
                 className="text-[11px] font-semibold text-foreground flex items-center justify-between"
               >
                 <span>Enter Current Master Password *</span>
-                <span className="text-[10px] text-muted-foreground">Default: faheemmahi8080</span>
+                <span className="text-[10px] text-muted-foreground">Default: 123</span>
               </label>
               <div className="relative flex items-center">
                 <Lock className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />

@@ -67,8 +67,28 @@ export function VehicleLineArtRunner() {
     }
   }, [isLoginPage, startDrive])
 
-  // If inside the portal, do not render vehicle line art runner
-  if (!isLoginPage) {
+  // Check if presentation deck is active
+  const [isPresentationActive, setIsPresentationActive] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!isLoginPage) return
+    const checkState = () => {
+      const modal = document.getElementById("presentation-deck")
+      const hasClass = document.body.classList.contains("presentation-deck-open")
+      setIsPresentationActive(Boolean(modal || hasClass))
+    }
+    checkState()
+    const observer = new MutationObserver(checkState)
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+    window.addEventListener("presentation-deck-toggle", checkState)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("presentation-deck-toggle", checkState)
+    }
+  }, [isLoginPage])
+
+  // If inside the portal or presentation is open, do not render vehicle line art runner
+  if (!isLoginPage || isPresentationActive) {
     return null
   }
 
@@ -80,6 +100,8 @@ export function VehicleLineArtRunner() {
 
   return (
     <div
+      id="vehicle-line-art-runner"
+      data-vehicle-runner="true"
       aria-hidden="true"
       className="fixed inset-x-0 bottom-0 pointer-events-none z-40 overflow-hidden select-none"
       style={{

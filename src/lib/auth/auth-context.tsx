@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import {
   getSuperAdminCredentials,
   isSuperAdminEmail,
+  isUserSuperAdmin,
   verifySuperAdminPassword,
   SUPERADMIN_CREDENTIALS_EVENT,
   type SuperAdminCredentials,
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setUser((prevUser) => {
         if (!prevUser) return prevUser
-        if (prevUser.role === "Super Admin" || isSuperAdminEmail(prevUser.email)) {
+        if (isUserSuperAdmin(prevUser)) {
           const updated = {
             ...prevUser,
             email: creds.email,
@@ -77,12 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           parsed.userType = "INTERNAL"
           parsed.isInHouse = true
         }
-        if (parsed.role === "Super Admin" || isSuperAdminEmail(parsed.email)) {
+        if (isUserSuperAdmin(parsed)) {
           parsed.role = "Super Admin"
-          parsed.name = creds.name
-          parsed.email = creds.email
+          parsed.name = creds.name || parsed.name || "Faheem Shaikh"
+          parsed.email = creds.email || parsed.email
           parsed.userType = "INTERNAL"
           parsed.isInHouse = true
+          localStorage.setItem("transvolt_user", JSON.stringify(parsed))
         }
         setUser(parsed)
       } catch {}

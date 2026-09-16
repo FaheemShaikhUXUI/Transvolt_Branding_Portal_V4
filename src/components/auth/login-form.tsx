@@ -91,11 +91,11 @@ function AnimatedWaveBackground() {
       const greenCenterY = centerY - overlapOffset
       const blueCenterY = centerY + overlapOffset
 
-      // --- SET 1: 32 GREEN LINES (#548235) with Left-to-Right Beam Lights ---
+      // --- SET 1: 32 GREEN LINES (#548235) with Left-to-Right Beam Lights (Reduced opacity by 40%) ---
       for (let i = 0; i < TOTAL_LINES; i++) {
         const normI = (i - (TOTAL_LINES - 1) / 2) / (TOTAL_LINES / 2) // normalized -1 to +1
         const centerFactor = 1 - Math.abs(normI)
-        const alpha = 0.22 + centerFactor * 0.55
+        const alpha = 0.13 + centerFactor * 0.33
         ctx.strokeStyle = `rgba(84, 130, 53, ${alpha})` // Transvolt Green #548235
         ctx.lineWidth = 1.15
 
@@ -126,7 +126,7 @@ function AnimatedWaveBackground() {
         }
         ctx.stroke()
 
-        // --- ONE BEAM LIGHT PER GREEN LINE: Moving Left to Right (15% opacity) ---
+        // --- ONE BEAM LIGHT PER GREEN LINE: Moving Left to Right (Reduced opacity by 40%) ---
         const beamProgress = (t * 0.35 + (i / TOTAL_LINES) * 0.75) % 1.3 - 0.15
         const beamCenter = beamProgress * width
         const beamLength = 150
@@ -160,7 +160,7 @@ function AnimatedWaveBackground() {
           if (beamEnd > beamStart) {
             const beamGrad = ctx.createLinearGradient(beamStart, 0, beamEnd, 0)
             beamGrad.addColorStop(0, "rgba(160, 240, 100, 0)")
-            beamGrad.addColorStop(0.5, "rgba(210, 255, 160, 0.15)") // 15% opacity beam light
+            beamGrad.addColorStop(0.5, "rgba(210, 255, 160, 0.09)") // 9% opacity beam light (down 40% from 15%)
             beamGrad.addColorStop(1, "rgba(160, 240, 100, 0)")
             ctx.strokeStyle = beamGrad
             ctx.lineWidth = 2.4
@@ -169,11 +169,11 @@ function AnimatedWaveBackground() {
         }
       }
 
-      // --- SET 2: 32 BLUE LINES (#4472C4) with Right-to-Left Beam Lights (15% opacity) ---
+      // --- SET 2: 32 BLUE LINES (#4472C4) with Right-to-Left Beam Lights (Reduced opacity by 40%) ---
       for (let i = 0; i < TOTAL_LINES; i++) {
         const normI = (i - (TOTAL_LINES - 1) / 2) / (TOTAL_LINES / 2) // normalized -1 to +1
         const centerFactor = 1 - Math.abs(normI)
-        const alpha = 0.22 + centerFactor * 0.55
+        const alpha = 0.13 + centerFactor * 0.33
         ctx.strokeStyle = `rgba(68, 114, 196, ${alpha})` // Transvolt Blue #4472C4
         ctx.lineWidth = 1.15
 
@@ -203,7 +203,7 @@ function AnimatedWaveBackground() {
         }
         ctx.stroke()
 
-        // --- ONE BEAM LIGHT PER BLUE LINE: Moving Right to Left (15% opacity) ---
+        // --- ONE BEAM LIGHT PER BLUE LINE: Moving Right to Left (Reduced opacity by 40%) ---
         const beamProgress = 1 - ((t * 0.35 + (i / TOTAL_LINES) * 0.75) % 1.3 - 0.15)
         const beamCenter = beamProgress * width
         const beamLength = 150
@@ -237,7 +237,7 @@ function AnimatedWaveBackground() {
           if (beamEnd > beamStart) {
             const beamGrad = ctx.createLinearGradient(beamStart, 0, beamEnd, 0)
             beamGrad.addColorStop(0, "rgba(100, 180, 255, 0)")
-            beamGrad.addColorStop(0.5, "rgba(190, 230, 255, 0.15)") // 15% opacity beam light
+            beamGrad.addColorStop(0.5, "rgba(190, 230, 255, 0.09)") // 9% opacity beam light (down 40% from 15%)
             beamGrad.addColorStop(1, "rgba(100, 180, 255, 0)")
             ctx.strokeStyle = beamGrad
             ctx.lineWidth = 2.4
@@ -274,8 +274,8 @@ import {
 
 export function LoginForm() {
   const { login, isLoading } = useAuth()
-  const [email, setEmail] = React.useState("faheem.s@transvolt.in")
-  const [password, setPassword] = React.useState("faheemmahi8080")
+  const [email, setEmail] = React.useState("admin")
+  const [password, setPassword] = React.useState("123")
   const [showPassword, setShowPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number }>({ x: -1000, y: -1000 })
@@ -421,51 +421,32 @@ export function LoginForm() {
             </p>
           </div>
 
-          {/* Highlighted Interactive Button: Watch Presentation & Benefits of this Portal */}
+          {/* Simple Single-Color Presentation Button */}
           <div className="mt-6 sm:mt-7 max-w-lg">
             <button
               type="button"
               id="login-watch-presentation-btn"
               onClick={() => setIsPresentationOpen(true)}
-              className="group relative w-full overflow-hidden rounded-2xl p-[1.5px] transition-all duration-300 hover:scale-[1.015] active:scale-[0.99] cursor-pointer shadow-[0_4px_24px_rgba(16,185,129,0.22)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.42)] text-left"
+              className="group w-full flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-500/60 p-3.5 sm:p-4 transition-all duration-200 cursor-pointer shadow-md shadow-blue-500/10 active:scale-[0.99] text-left"
             >
-              {/* 1. Continuous Auto-Animated Rotating Conic Gradient Border */}
-              <span
-                className="absolute inset-[-1000%] animate-[spin_4.5s_linear_infinite]"
-                style={{
-                  background: "conic-gradient(from 90deg at 50% 50%, #10B981 0%, #06B6D4 25%, #3B82F6 50%, #8B5CF6 75%, #10B981 100%)",
-                }}
-              />
+              {/* Left Play Icon in single color */}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                <Play className="h-4 w-4 fill-current ml-0.5" />
+              </div>
 
-              {/* 2. Inner Button Container with Deep Frosted Glass */}
-              <div className="relative flex items-center justify-between gap-3 sm:gap-4 rounded-[14.5px] bg-[#0c1427]/92 px-4 sm:px-5 py-3.5 backdrop-blur-xl transition-colors duration-300 group-hover:bg-[#0c1427]/80">
-                {/* Continuous Auto-Sweeping Specular Shimmer Sheen */}
-                <div
-                  className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmerSweep_3.2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/[0.12] to-transparent"
-                />
+              {/* Text block in clean single theme */}
+              <div className="flex-1 min-w-0">
+                <span className="text-xs sm:text-sm font-semibold tracking-tight text-white group-hover:text-blue-200 transition-colors block">
+                  Watch Presentation &amp; Benefits of this Portal
+                </span>
+                <p className="text-[11px] text-slate-400 group-hover:text-slate-300 truncate mt-0.5 transition-colors">
+                  Explore portal overview, brand workflows &amp; enterprise benefits
+                </p>
+              </div>
 
-                {/* Left Icon with Play/Presentation badge & subtle breathing glow */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/25 to-cyan-500/20 border border-emerald-400/40 text-emerald-300 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                  <Play className="h-4 w-4 text-emerald-300 fill-emerald-300/40 group-hover:scale-110 transition-transform duration-300 ml-0.5" />
-                </div>
-
-                {/* Text block */}
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs sm:text-sm font-bold tracking-tight text-white group-hover:text-emerald-300 transition-colors">
-                      Watch Presentation & Benefits of this Portal
-                    </span>
-                    <Sparkles className="h-3 w-3 text-amber-300 animate-pulse shrink-0" />
-                  </div>
-                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                    Explore portal overview, brand workflows & enterprise benefits
-                  </p>
-                </div>
-
-                {/* Right Arrow CTA Badge */}
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 border border-white/15 text-slate-300 group-hover:bg-gradient-to-r group-hover:from-emerald-500 group-hover:to-cyan-500 group-hover:text-white group-hover:border-emerald-400 transition-all duration-300 shadow-sm">
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                </div>
+              {/* Right Arrow CTA Badge */}
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </button>
           </div>
@@ -507,7 +488,7 @@ export function LoginForm() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="faheem.s@transvolt.in"
+                    placeholder="admin"
                     className="border border-white/15 text-white placeholder:text-[#64748b] h-11 pl-10 pr-4 rounded-xl focus-visible:ring-2 focus-visible:ring-[#548235] focus-visible:border-[#548235] focus:border-[#548235] focus:bg-[#548235]/10 text-xs sm:text-sm font-medium transition-all"
                     style={{ 
                       backgroundColor: "rgba(255, 255, 255, 0.03)", 

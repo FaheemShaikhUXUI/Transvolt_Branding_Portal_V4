@@ -6,6 +6,7 @@ import { Search, LogOut, Menu, Smile } from "lucide-react"
 import { BrandLogo } from "./brand-logo"
 import { useAuth } from "@/lib/auth/auth-context"
 import { useUserAccess } from "@/lib/user-access/user-access-context"
+import { isUserSuperAdmin } from "@/lib/auth/superadmin-credentials"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ import { NotificationBell } from "./notification-bell"
 export function Header() {
   const { logout, user } = useAuth()
   const { openModal } = useUserAccess()
+  const isSuperAdmin = isUserSuperAdmin(user)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -95,7 +97,7 @@ export function Header() {
             <button 
               id="header-avatar-btn" 
               className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full border border-border/80 hover:border-primary/50 bg-background/80 hover:bg-muted/40 transition-all cursor-pointer select-none" 
-              onClick={() => openModal(user?.role === "Super Admin" ? 'super-admin' : 'active-users')} 
+              onClick={() => openModal(isSuperAdmin ? 'super-admin' : 'active-users')} 
             />
           }>
             <Avatar className="h-7 w-7 ring-2 ring-primary/20 shrink-0">
@@ -110,11 +112,11 @@ export function Header() {
               </span>
               <span className="text-[10px] font-semibold text-[#548235] flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#548235] animate-pulse" />
-                {user?.role === "Super Admin" ? "Super Admin" : "In-House"}
+                {isSuperAdmin ? "Super Admin" : "In-House"}
               </span>
             </div>
           </TooltipTrigger>
-          <TooltipContent>{user?.email} ({user?.role === "Super Admin" ? "Super Admin" : "In-House Person"})</TooltipContent>
+          <TooltipContent>{user?.email} ({isSuperAdmin ? "Super Admin" : "In-House Person"})</TooltipContent>
         </Tooltip>
 
         {/* Small Smiley Button to View Shinchan Animation */}

@@ -71,9 +71,9 @@ export function useCircularThemeTransition(
       const w = window.innerWidth
       const h = window.innerHeight
       const endRadius = Math.hypot(Math.max(x, w - x), Math.max(y, h - y))
-      const targetRadius = endRadius + 400
+      const targetRadius = endRadius + 600
 
-      // Set CSS variables on documentElement for the 375px soft feathered radial-gradient mask (150% more faded)
+      // Set CSS variables on documentElement for the 520px soft feathered radial-gradient mask (ultra-deep soft diffusion)
       document.documentElement.style.setProperty("--theme-x", `${x}px`)
       document.documentElement.style.setProperty("--theme-y", `${y}px`)
       document.documentElement.style.setProperty("--mask-radius", "0px")
@@ -91,7 +91,7 @@ export function useCircularThemeTransition(
         key: Date.now(),
       })
 
-      const duration = 950 // ultra-soft, slow and luxurious
+      const duration = 1860 // 50% slower, ultra-luxurious and silky smooth (was 1240ms)
 
       // Clean up wave overlay and CSS variables after animation duration
       setTimeout(() => {
@@ -100,7 +100,7 @@ export function useCircularThemeTransition(
         document.documentElement.style.removeProperty("--theme-x")
         document.documentElement.style.removeProperty("--theme-y")
         document.documentElement.style.removeProperty("--mask-radius")
-      }, duration + 80)
+      }, duration + 160)
 
       isTransitioningRef.current = true
 
@@ -116,7 +116,7 @@ export function useCircularThemeTransition(
         transition.ready
           .then(() => {
             // Animate --mask-radius smoothly on each frame using requestAnimationFrame
-            // This guarantees a 375px ultra-deep soft-feathered, misty gradient expansion!
+            // This guarantees a 520px ultra-deep soft-feathered, misty gradient expansion!
             const startTime = performance.now()
 
             // Also trigger Web Animations API on root for compositor acceleration if supported
@@ -127,7 +127,7 @@ export function useCircularThemeTransition(
                 },
                 {
                   duration,
-                  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                  easing: "cubic-bezier(0.12, 1, 0.28, 1)",
                   pseudoElement: "::view-transition-new(root)",
                 }
               )
@@ -136,8 +136,8 @@ export function useCircularThemeTransition(
             function animateMask(now: number) {
               const elapsed = now - startTime
               const progress = Math.min(1, elapsed / duration)
-              // Smooth cubic-out curve
-              const eased = 1 - Math.pow(1 - progress, 3.2)
+              // Smooth quintic-out curve for seamless glide
+              const eased = 1 - Math.pow(1 - progress, 3.6)
               const currentR = eased * targetRadius
 
               document.documentElement.style.setProperty("--mask-radius", `${currentR.toFixed(1)}px`)
@@ -156,7 +156,7 @@ export function useCircularThemeTransition(
         // Fallback for browsers without View Transitions API
         setTimeout(() => {
           setTheme(targetTheme)
-        }, 450)
+        }, 850)
       }
     },
     [currentTheme, setTheme]
@@ -180,7 +180,7 @@ export function ThemeCircularWavePortal({ wave }: { wave: ThemeWaveState | null 
 
   if (!mounted || !wave) return null
 
-  const diameter = Math.round(wave.endRadius * 2.6)
+  const diameter = Math.round(wave.endRadius * 2.8)
 
   return createPortal(
     <div
@@ -197,7 +197,7 @@ export function ThemeCircularWavePortal({ wave }: { wave: ThemeWaveState | null 
           width: `${diameter}px`,
           height: `${diameter}px`,
           background: `radial-gradient(circle at center, transparent 0%, transparent 35%, ${wave.glowColor} 65%, ${wave.accentColor} 82%, transparent 100%)`,
-          filter: "blur(56px)",
+          filter: "blur(72px)",
         }}
       />
     </div>,

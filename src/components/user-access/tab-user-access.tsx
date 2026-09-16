@@ -4,7 +4,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import {
   Mail, Globe, Building2, CheckSquare2, Square,
-  AlertTriangle, Send, CheckCircle2, Edit3, X, Info, Sparkles, Check, Lock
+  AlertTriangle, Send, CheckCircle2, Edit3, X, Info, Sparkles, Check, Lock, Crown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,8 @@ import { useUserAccess } from "@/lib/user-access/user-access-context"
 import { useAccessRequests } from "@/lib/access-requests/access-request-context"
 import { useAuth } from "@/lib/auth/auth-context"
 import { isInternalEmail, getUserType } from "@/lib/user-access/permissions-utils"
+import { isUserSuperAdmin } from "@/lib/auth/superadmin-credentials"
+import { SuperAdminCredentialsCard } from "./super-admin-credentials-card"
 import type { AccessFormState, Permission, AccessScope } from "@/lib/user-access/types"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -451,6 +453,7 @@ function AmazingEmailInput({ value, onChange, onBlur, disabled, error, touched, 
 // ─── Main TabUserAccess Component ───────────────────────────────────────────
 export function TabUserAccess() {
   const { user } = useAuth()
+  const isSuperAdmin = isUserSuperAdmin(user)
   const {
     addUser,
     updateUser,
@@ -705,6 +708,40 @@ export function TabUserAccess() {
               <Button variant="ghost" size="icon-sm" onClick={handleCancel}>
                 <X className="h-4 w-4" />
               </Button>
+            </div>
+          )}
+
+          {/* 👑 Super Admin Master Settings & Password (Exclusively visible to Super Admin in this form) */}
+          {isSuperAdmin && (
+            <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-500/[0.04] p-4 shadow-xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30">
+                    <Crown className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-foreground">
+                        Super Admin Settings &amp; Password Management
+                      </h3>
+                      <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0">
+                        SUPER ADMIN ONLY
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Confidential master credentials. Invisible to other portal users. You can change your Super Admin User ID and Master Password here anytime.
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold gap-1">
+                  <Lock className="h-3 w-3" />
+                  Private Master Access
+                </Badge>
+              </div>
+
+              <div className="pt-1">
+                <SuperAdminCredentialsCard />
+              </div>
             </div>
           )}
 

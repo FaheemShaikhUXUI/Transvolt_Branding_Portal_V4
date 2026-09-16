@@ -45,3 +45,5 @@ next-env.d.ts
 temp-app/
 temp2/
 .agents/
+Presentation/
+scripts/

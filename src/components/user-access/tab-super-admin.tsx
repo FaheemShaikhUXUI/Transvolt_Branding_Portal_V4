@@ -7,14 +7,14 @@ import { Separator } from "@/components/ui/separator"
 import { PERMISSION_DEFINITIONS } from "@/lib/user-access/mock-service"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/auth-context"
-import { isSuperAdminEmail } from "@/lib/auth/superadmin-credentials"
+import { isSuperAdminEmail, isUserSuperAdmin } from "@/lib/auth/superadmin-credentials"
 import { SuperAdminCredentialsCard } from "./super-admin-credentials-card"
 
 export function TabSuperAdmin() {
   const { superAdminCredentials, user } = useAuth()
-  const isSuperAdmin = user?.role === "Super Admin" || (user?.email && isSuperAdminEmail(user.email))
-  const activeName = superAdminCredentials?.name || (isSuperAdmin ? user?.name : "Faheem Shaikh")
-  const activeEmail = superAdminCredentials?.email || (isSuperAdmin ? user?.email : "faheem.s@transvolt.in")
+  const isSuperAdmin = isUserSuperAdmin(user)
+  const activeName = superAdminCredentials?.name || (isSuperAdmin ? user?.name : "Faheem Shaikh") || "Faheem Shaikh"
+  const activeEmail = superAdminCredentials?.email || (isSuperAdmin ? user?.email : "faheem.s@transvolt.in") || "faheem.s@transvolt.in"
   const isInHouse = activeEmail.toLowerCase().includes("@transvolt.in") || activeEmail.toLowerCase().includes("@transvolt")
 
   return (

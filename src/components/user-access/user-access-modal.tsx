@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useUserAccess } from "@/lib/user-access/user-access-context"
 import { useAccessRequests } from "@/lib/access-requests/access-request-context"
 import { useAuth } from "@/lib/auth/auth-context"
-import { isSuperAdminEmail } from "@/lib/auth/superadmin-credentials"
+import { isSuperAdminEmail, isUserSuperAdmin } from "@/lib/auth/superadmin-credentials"
 import { TabSuperAdmin } from "./tab-super-admin"
 import { TabUserAccess } from "./tab-user-access"
 import { TabActiveUsers } from "./tab-active-users"
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 type TabId = "super-admin" | "user-access" | "active-users" | "access-requests"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; description: string }[] = [
-  { id: "super-admin", label: "Super Admin Control", icon: Crown, description: "Unlimited access" },
+  { id: "super-admin", label: "Super Admin Settings", icon: Crown, description: "Master ID & Password" },
   { id: "user-access", label: "User Access", icon: UserCog, description: "Assign permissions" },
   { id: "active-users", label: "Active Users", icon: Users, description: "Manage users" },
   { id: "access-requests", label: "Access Requests", icon: Inbox, description: "Review requests & history" },
@@ -27,7 +27,7 @@ export function UserAccessModal() {
   const { isModalOpen, closeModal, defaultTab } = useUserAccess()
   const { pendingRequests } = useAccessRequests()
   const { user } = useAuth()
-  const isSuperAdmin = user?.role === "Super Admin" || (user?.email && isSuperAdminEmail(user.email))
+  const isSuperAdmin = isUserSuperAdmin(user)
 
   const visibleTabs = React.useMemo(() => {
     return TABS.filter((tab) => tab.id !== "super-admin" || isSuperAdmin)
@@ -119,6 +119,11 @@ export function UserAccessModal() {
                 >
                   <tab.icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
                   <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.id === "super-admin" && (
+                    <span className="hidden md:inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                      Password &amp; ID
+                    </span>
+                  )}
                   <span className="sm:hidden">
                     {tab.id === "super-admin"
                       ? "Admin"
