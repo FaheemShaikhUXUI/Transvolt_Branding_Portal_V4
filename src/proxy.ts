@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/request"
+import type { NextRequest } from "next/server"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 1. Allow internal Next.js assets, API routes, static public files, and login page
@@ -29,15 +29,11 @@ export function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
+export default proxy
+export const middleware = proxy
+
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets with extensions
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|pptx)).*)",
   ],
 }
