@@ -65,9 +65,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+function setSessionCookie() {
+  if (typeof document !== "undefined") {
+    document.cookie = "transvolt_session=1; path=/; max-age=604800; SameSite=Lax"
+  }
+}
+
+function clearSessionCookie() {
+  if (typeof document !== "undefined") {
+    document.cookie = "transvolt_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax"
+  }
+}
+
   React.useEffect(() => {
-    // Check local storage for mock session
-    const storedUser = localStorage.getItem("transvolt_user")
+    // Check if active session cookie is present
+    const hasSessionCookie = typeof document !== "undefined" && document.cookie.includes("transvolt_session=")
+    const storedUser = hasSessionCookie ? localStorage.getItem("transvolt_user") : null
+
+    // If cookie was cleared or expired, remove stale localStorage session
+    if (!hasSessionCookie && typeof localStorage !== "undefined" && localStorage.getItem("transvolt_user")) {
+      localStorage.removeItem("transvolt_user")
+    }
+
     if (storedUser) {
       try {
         const parsed: User = JSON.parse(storedUser)
@@ -140,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isInHouse: true,
       }
       setUser(superAdminUser)
+      setSessionCookie()
       localStorage.setItem("transvolt_user", JSON.stringify(superAdminUser))
       toast.success(`Welcome back, ${superAdminUser.name}! Successfully authenticated as Super Admin.`)
       router.push("/")
@@ -161,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isInHouse: true,
       }
       setUser(inHouseUser)
+      setSessionCookie()
       localStorage.setItem("transvolt_user", JSON.stringify(inHouseUser))
       toast.success(`Welcome, ${formattedName}! Connected as In-House Team Member (@transvolt.in).`)
       router.push("/")
@@ -177,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isInHouse: false,
     }
     setUser(externalUser)
+    setSessionCookie()
     localStorage.setItem("transvolt_user", JSON.stringify(externalUser))
     toast.success(`Welcome, ${externalUser.name}! Connected as External Partner.`)
     router.push("/")
@@ -185,13 +207,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null)
+    clearSessionCookie()
     localStorage.removeItem("transvolt_user")
     toast.success("Successfully logged out.")
     router.push("/login")
   }
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-black">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+      </div>
+    )
   }
 
   return (
