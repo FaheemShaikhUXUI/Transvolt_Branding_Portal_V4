@@ -21,6 +21,9 @@ import {
   Maximize2,
   CheckCheck,
   Pencil,
+  Play,
+  Film,
+  Video,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -28,7 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useAssets } from "@/lib/assets/assets-context"
 import { Asset, PhotoItem } from "@/components/assets/asset-tile"
-import { AddPhotoModal, PhotoCategory, compressImage, disambiguateFileName, insertPhotosSideBySide } from "./add-photo-modal"
+import { AddPhotoModal, PhotoCategory, compressImage, disambiguateFileName, insertPhotosSideBySide, isVideoFile } from "./add-photo-modal"
 import { AddEmployeePhotoModal } from "./add-employee-photo-modal"
 import { EditEmployeePhotoModal } from "./edit-employee-photo-modal"
 import { DuplicatePhotoDialog, DuplicateFileInfo } from "./duplicate-photo-dialog"
@@ -38,6 +41,14 @@ import { downloadGroupAsZip, downloadFileLossless } from "@/lib/zip-utils"
 import { getOriginalPhoto, saveOriginalPhotosBatch } from "@/lib/assets/photo-vault"
 import { removePhotoBackground } from "@/lib/utils/background-remover"
 import { cn } from "@/lib/utils"
+
+export function isVideoItem(item?: { type?: string; name?: string; url?: string }): boolean {
+  if (!item) return false
+  if (item.type && item.type.toLowerCase().startsWith("video/")) return true
+  const name = (item.name || item.url || "").toLowerCase()
+  const videoExts = [".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv", ".ogv", ".3gp"]
+  return videoExts.some((ext) => name.includes(ext) || name.endsWith(ext))
+}
 import {
   Dialog,
   DialogContent,
@@ -80,13 +91,16 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
   const [internalSearch, setInternalSearch] = React.useState("")
   const searchQuery = (externalSearch || internalSearch).trim().toLowerCase()
 
+  // Per-tile filters: "all" | "photos" | "videos"
+  const [tileFilters, setTileFilters] = React.useState<Record<string, "all" | "photos" | "videos">>({})
+
   // Modal State
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
   const [editTarget, setEditTarget] = React.useState<Asset | null>(null)
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = React.useState(false)
   const [editEmployeeTarget, setEditEmployeeTarget] = React.useState<Asset | null>(null)
 
-  // Direct (+) Photo Upload State & Ref
+  // Direct (+) Photo/Video Upload State & Ref
   const [directUploadTarget, setDirectUploadTarget] = React.useState<Asset | null>(null)
   const directFileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -104,7 +118,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
     if (!directUploadTarget || filesToProcess.length === 0) return
 
     try {
-      toast.info(`Uploading ${filesToProcess.length} photo${filesToProcess.length > 1 ? "s" : ""}...`)
+      toast.info(`Uploading ${filesToProcess.length} item${filesToProcess.length > 1 ? "s" : ""}...`)
       const newItems: PhotoItem[] = []
       const todayFormatted = new Intl.DateTimeFormat("en-US", {
         day: "2-digit",
@@ -116,20 +130,21 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
         const file = item.file
         const displayName = item.customName || file.name
         const isEventOrSite = directUploadTarget.subCategory !== "Employee"
-        const { previewUrl, originalUrl } = await compressImage(file, isEventOrSite)
+        const { previewUrl, originalUrl, isVideo } = await compressImage(file, isEventOrSite)
+        const isVid = Boolean(isVideo || isVideoFile(file))
         newItems.push({
           id: "photo_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
           name: displayName,
           url: previewUrl || originalUrl, // Lightweight thumbnail for smooth grid browsing
           thumbnailUrl: previewUrl || originalUrl, // Lightweight thumbnail for smooth grid browsing
-          originalUrl: originalUrl, // 100% UNTOUCHED ORIGINAL RAW PHOTO
+          originalUrl: originalUrl, // 100% UNTOUCHED ORIGINAL RAW PHOTO OR VIDEO
           size: file.size,
-          type: file.type || "image/jpeg",
+          type: isVid ? (file.type || "video/mp4") : (file.type || "image/jpeg"),
           uploadedAt: todayFormatted,
         })
       }
 
-      // Persist full-res original photos to IndexedDB vault
+      // Persist full-res original photos/videos to IndexedDB vault
       try {
         await saveOriginalPhotosBatch(newItems.map((p) => ({ id: p.id, data: p.originalUrl })))
       } catch (vaultErr) {
@@ -155,10 +170,10 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
       }
 
       updateCustomAsset(updatedCollection)
-      toast.success(`Added ${newItems.length} photo(s) to "${directUploadTarget.name}"!`)
+      toast.success(`Added ${newItems.length} item(s) to "${directUploadTarget.name}"!`)
     } catch (err) {
       console.error("Direct photo upload failed:", err)
-      toast.error("Failed to add photos. Please try again.")
+      toast.error("Failed to add items. Please try again.")
     } finally {
       setDirectUploadTarget(null)
       setPendingDirectBatch([])
@@ -177,7 +192,8 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
       const ext = file.name.split(".").pop()?.toLowerCase()
       const isJpg = ext === "jpg" || ext === "jpeg" || file.type === "image/jpeg"
       const isPng = ext === "png" || file.type === "image/png"
-      if (isJpg || isPng) {
+      const isVid = isVideoFile(file)
+      if (isJpg || isPng || isVid) {
         validFiles.push(file)
       } else {
         hasInvalid = true
@@ -185,7 +201,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
     })
 
     if (hasInvalid) {
-      toast.warning("Only JPG and PNG images are allowed. Non-JPG/PNG files were excluded.")
+      toast.warning("Only JPG, PNG images and video files (MP4, WebM, MOV, etc.) are allowed.")
     }
 
     if (e.target) e.target.value = ""
@@ -749,7 +765,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
             placeholder={
               activeTab === "EMPLOYEE"
                 ? "Search employees by name, designation, or location..."
-                : `Search ${activeTab.toLowerCase()} photos by title or date...`
+                : `Search ${activeTab.toLowerCase()} photos & videos by title or date...`
             }
             value={internalSearch}
             onChange={(e) => setInternalSearch(e.target.value)}
@@ -767,7 +783,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
             ) : (
               <>
                 <strong>{filteredAssets.length}</strong> collection{filteredAssets.length !== 1 ? "s" : ""} (
-                <strong>{totalPhotosCount}</strong> photo{totalPhotosCount !== 1 ? "s" : ""})
+                <strong>{totalPhotosCount}</strong> items)
               </>
             )}
           </span>
@@ -788,7 +804,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
               trigger={
                 <Button className="h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all cursor-pointer">
                   <Plus className="h-4.5 w-4.5 stroke-[2.5]" />
-                  <span>Add Photo</span>
+                  <span>Add Photos / Videos</span>
                 </Button>
               }
             />
@@ -951,13 +967,22 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
         <div className="flex flex-col gap-6 w-full">
           {filteredAssets.map((collection) => {
             const photosList = collection.photos || []
-            const photoCount = photosList.length || (collection.thumbnail ? 1 : 0)
+            const currentFilter = tileFilters[collection.id] || "all"
+            const photoOnlyItems = photosList.filter((p) => !isVideoItem(p))
+            const videoOnlyItems = photosList.filter((p) => isVideoItem(p))
+            const filteredList =
+              currentFilter === "photos"
+                ? photoOnlyItems
+                : currentFilter === "videos"
+                ? videoOnlyItems
+                : photosList
+
             const formattedDate = formatEventDate(collection.date || collection.createdAt)
 
             // Slot array: display up to 8 tiles across
             const TOTAL_SLOTS = 8
-            const displayedPhotos = photosList.slice(0, TOTAL_SLOTS)
-            const emptySlotsCount = Math.max(0, TOTAL_SLOTS - (displayedPhotos.length || (collection.thumbnail ? 1 : 0)))
+            const displayedPhotos = filteredList.slice(0, TOTAL_SLOTS)
+            const emptySlotsCount = Math.max(0, TOTAL_SLOTS - (displayedPhotos.length || (collection.thumbnail && currentFilter !== "videos" ? 1 : 0)))
             const isExpanded = !!expandedCollections[collection.id]
 
             const isSite = collection.subCategory === "Site"
@@ -968,151 +993,261 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                 key={collection.id}
                 className="w-full rounded-[24px] border border-neutral-200 dark:border-neutral-800 bg-card p-6 sm:p-7 shadow-xs hover:shadow-sm transition-all flex flex-col gap-5 text-left"
               >
-                {/* Header Row: Event/Site Name & Subtitle on Left, Action Icons on Right */}
-                <div className="flex items-start justify-between gap-4">
+                {/* Header Row: Event/Site Name & Subtitle on Left, Filter buttons + Action Icons on Right */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   {/* Left: Event/Site Name & Subtitle */}
                   <div className="space-y-1">
                     <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                       {collection.name}
                     </h3>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-normal">
-                      Date: {formattedDate} | Total Photos: {photoCount}
+                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-normal flex items-center gap-2 flex-wrap">
+                      <span>Date: {formattedDate}</span>
+                      <span>•</span>
+                      <span>Total: {photosList.length} items</span>
+                      {videoOnlyItems.length > 0 && (
+                        <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200/50 dark:border-rose-800/40">
+                          {videoOnlyItems.length} Video{videoOnlyItems.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
                     </p>
                   </div>
 
-                  {/* Right: Action Icons (Edit, Plus, Download, More Options) */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    {/* 1) Edit Icon */}
-                    <button
-                      type="button"
-                      onClick={() => setEditTarget(collection)}
-                      className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
-                      title={`Edit ${typeLabel} & Manage Photos`}
-                    >
-                      <Pencil className="h-5 w-5" />
-                    </button>
+                  {/* Right: Filter Buttons on Left Side of Edit Pencil Icon + Action Icons */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
+                    {/* Sweet Small Filter-like Buttons (Show All, Photo or Videos) */}
+                    <div className="inline-flex items-center p-0.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/60 shadow-2xs">
+                      {/* 1. Show All */}
+                      <button
+                        type="button"
+                        onClick={() => setTileFilters((prev) => ({ ...prev, [collection.id]: "all" }))}
+                        className={cn(
+                          "px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer select-none flex items-center gap-1.5",
+                          currentFilter === "all"
+                            ? "bg-white dark:bg-neutral-900 text-foreground shadow-xs border border-black/5 dark:border-white/10 font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <span>Show All</span>
+                        <span
+                          className={cn(
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                            currentFilter === "all"
+                              ? "bg-neutral-100 dark:bg-neutral-800 text-foreground font-bold"
+                              : "bg-muted/70 text-muted-foreground"
+                          )}
+                        >
+                          {photosList.length}
+                        </span>
+                      </button>
 
-                    {/* 2) Plus (+) Icon */}
-                    <button
-                      type="button"
-                      onClick={() => handleTriggerDirectUpload(collection)}
-                      className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
-                      title="Add Photos Directly"
-                    >
-                      <Plus className="h-5 w-5" />
-                    </button>
+                      {/* 2. Photo */}
+                      <button
+                        type="button"
+                        onClick={() => setTileFilters((prev) => ({ ...prev, [collection.id]: "photos" }))}
+                        className={cn(
+                          "px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer select-none flex items-center gap-1.5",
+                          currentFilter === "photos"
+                            ? "bg-white dark:bg-neutral-900 text-[#4472C4] shadow-xs border border-black/5 dark:border-white/10 font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>Photo</span>
+                        <span
+                          className={cn(
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                            currentFilter === "photos"
+                              ? "bg-blue-50 dark:bg-blue-950/60 text-[#4472C4] font-bold"
+                              : "bg-muted/70 text-muted-foreground"
+                          )}
+                        >
+                          {photoOnlyItems.length}
+                        </span>
+                      </button>
 
-                    {/* 3) Download Icon */}
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadAllZip(collection)}
-                      className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
-                      title="Download All Photos (ZIP)"
-                    >
-                      <Download className="h-5 w-5" />
-                    </button>
+                      {/* 3. Videos */}
+                      <button
+                        type="button"
+                        onClick={() => setTileFilters((prev) => ({ ...prev, [collection.id]: "videos" }))}
+                        className={cn(
+                          "px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer select-none flex items-center gap-1.5",
+                          currentFilter === "videos"
+                            ? "bg-white dark:bg-neutral-900 text-rose-600 dark:text-rose-400 shadow-xs border border-black/5 dark:border-white/10 font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Film className="h-3.5 w-3.5" />
+                        <span>Videos</span>
+                        <span
+                          className={cn(
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                            currentFilter === "videos"
+                              ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold"
+                              : "bg-muted/70 text-muted-foreground"
+                          )}
+                        >
+                          {videoOnlyItems.length}
+                        </span>
+                      </button>
+                    </div>
 
-                    {/* 4) More Options Icon (...) */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <button
-                            type="button"
-                            className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
-                            title="More Options"
+                    {/* Action Icons: Edit Pencil, Plus, Download, More Options */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* 1) Edit Icon */}
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget(collection)}
+                        className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
+                        title={`Edit ${typeLabel} & Manage Photos/Videos`}
+                      >
+                        <Pencil className="h-5 w-5" />
+                      </button>
+
+                      {/* 2) Plus (+) Icon */}
+                      <button
+                        type="button"
+                        onClick={() => handleTriggerDirectUpload(collection)}
+                        className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
+                        title="Add Photos or Videos Directly"
+                      >
+                        <Plus className="h-5 w-5" />
+                      </button>
+
+                      {/* 3) Download Icon */}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadAllZip(collection)}
+                        className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
+                        title="Download All Items (ZIP)"
+                      >
+                        <Download className="h-5 w-5" />
+                      </button>
+
+                      {/* 4) More Options Icon (...) */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <button
+                              type="button"
+                              className="p-1.5 text-neutral-500 hover:text-foreground hover:bg-muted/70 rounded-lg transition-colors cursor-pointer"
+                              title="More Options"
+                            >
+                              <MoreHorizontal className="h-5 w-5" />
+                            </button>
+                          }
+                        />
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => setEditTarget(collection)}
+                            className="cursor-pointer text-xs"
                           >
-                            <MoreHorizontal className="h-5 w-5" />
-                          </button>
-                        }
-                      />
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem
-                          onClick={() => setEditTarget(collection)}
-                          className="cursor-pointer text-xs"
-                        >
-                          <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
-                          Edit {typeLabel}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleTriggerDirectUpload(collection)}
-                          className="cursor-pointer text-xs"
-                        >
-                          <Plus className="h-4 w-4 mr-2 text-muted-foreground" />
-                          Add Photos
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setActiveLightbox({ collection, photoIndex: 0 })}
-                          className="cursor-pointer text-xs"
-                        >
-                          <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
-                          View Photos
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDownloadAllZip(collection)}
-                          className="cursor-pointer text-xs"
-                        >
-                          <Download className="h-4 w-4 mr-2 text-muted-foreground" />
-                          Download ZIP
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDeleteTarget(collection)}
-                          className="text-red-600 focus:text-red-600 cursor-pointer text-xs"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete {typeLabel}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            <Pencil className="h-4 w-4 mr-2 text-muted-foreground" />
+                            Edit {typeLabel}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleTriggerDirectUpload(collection)}
+                            className="cursor-pointer text-xs"
+                          >
+                            <Plus className="h-4 w-4 mr-2 text-muted-foreground" />
+                            Add Photos / Videos
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setActiveLightbox({ collection, photoIndex: 0 })}
+                            className="cursor-pointer text-xs"
+                          >
+                            <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
+                            View Items
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadAllZip(collection)}
+                            className="cursor-pointer text-xs"
+                          >
+                            <Download className="h-4 w-4 mr-2 text-muted-foreground" />
+                            Download ZIP
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeleteTarget(collection)}
+                            className="text-red-600 focus:text-red-600 cursor-pointer text-xs"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete {typeLabel}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
 
-                {/* Main Body: Horizontal Row of 8 Rounded Photo Thumbnails */}
-                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3.5 w-full">
-                  {/* Real Photo Tiles */}
-                  {displayedPhotos.map((photo, idx) => (
-                    <div
-                      key={photo.id}
-                      onClick={() => setActiveLightbox({ collection, photoIndex: idx })}
-                      className="group relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/50 cursor-pointer shadow-2xs hover:opacity-95 hover:scale-[1.02] transition-all select-none"
-                      title={photo.name}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.thumbnailUrl || photo.url || (photo as any).originalUrl}
-                        alt={photo.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Eye className="h-4 w-4 text-white drop-shadow-sm" />
-                      </div>
+                {/* Main Body: Horizontal Row of 8 Rounded Photo Thumbnails or Empty Filter message */}
+                {filteredList.length === 0 ? (
+                  <div className="py-8 px-4 text-center rounded-xl border border-dashed border-border/80 bg-muted/20 flex flex-col items-center justify-center gap-2">
+                    <div className="p-2.5 rounded-full bg-muted text-muted-foreground">
+                      {currentFilter === "videos" ? <Film className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
                     </div>
-                  ))}
-
-                  {/* Fallback if single thumbnail and no photos list */}
-                  {displayedPhotos.length === 0 && collection.thumbnail && (
-                    <div
-                      onClick={() => setActiveLightbox({ collection, photoIndex: 0 })}
-                      className="group relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/50 cursor-pointer shadow-2xs hover:opacity-95 hover:scale-[1.02] transition-all select-none"
+                    <p className="text-xs font-medium text-foreground">
+                      No {currentFilter === "videos" ? "videos" : "photos"} found in this collection.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setTileFilters((prev) => ({ ...prev, [collection.id]: "all" }))}
+                      className="text-xs text-[#4472C4] hover:underline font-semibold cursor-pointer"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={collection.thumbnail}
-                        alt={collection.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
+                      Reset filter to Show All
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3.5 w-full">
+                    {/* Real Photo/Video Tiles */}
+                    {displayedPhotos.map((photo) => {
+                      const actualIdx = photosList.findIndex((p) => p.id === photo.id)
+                      const isVid = isVideoItem(photo)
+                      return (
+                        <div
+                          key={photo.id}
+                          onClick={() => setActiveLightbox({ collection, photoIndex: actualIdx !== -1 ? actualIdx : 0 })}
+                          className="group relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/50 cursor-pointer shadow-2xs hover:opacity-95 hover:scale-[1.02] transition-all select-none"
+                          title={photo.name}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.thumbnailUrl || photo.url || (photo as any).originalUrl}
+                            alt={photo.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
 
-                  {/* Placeholder Slots to complete the 8-tile row layout as shown in the example image */}
-                  {Array.from({ length: emptySlotsCount }).map((_, idx) => (
-                    <div
-                      key={`slot_${idx}`}
-                      className="aspect-4/3 rounded-xl bg-neutral-100/90 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-700/30 transition-colors"
-                    />
-                  ))}
-                </div>
+                          {/* Video Play Overlay & Badge */}
+                          {isVid && (
+                            <>
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
+                                <div className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-xs shadow-md group-hover:scale-110 transition-transform">
+                                  <Play className="h-4 w-4 fill-white text-white translate-x-0.5" />
+                                </div>
+                              </div>
+                              <div className="absolute top-1.5 left-1.5 pointer-events-none">
+                                <span className="text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-600 text-white shadow-xs">
+                                  ▶ MP4
+                                </span>
+                              </div>
+                            </>
+                          )}
+
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Eye className="h-4 w-4 text-white drop-shadow-sm" />
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {/* Placeholder Slots to complete the 8-tile row layout */}
+                    {Array.from({ length: emptySlotsCount }).map((_, idx) => (
+                      <div
+                        key={`slot_${idx}`}
+                        className="aspect-4/3 rounded-xl bg-neutral-100/90 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-700/30 transition-colors"
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* Smooth Accordion Expansion Area */}
                 <div
@@ -1122,14 +1257,15 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                   )}
                 >
                   <div className="overflow-hidden space-y-3">
-                    {photosList.length > TOTAL_SLOTS ? (
+                    {filteredList.length > TOTAL_SLOTS ? (
                       <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3.5 w-full pt-1">
-                        {photosList.slice(TOTAL_SLOTS).map((photo, idx) => {
-                          const actualIdx = TOTAL_SLOTS + idx
+                        {filteredList.slice(TOTAL_SLOTS).map((photo) => {
+                          const actualIdx = photosList.findIndex((p) => p.id === photo.id)
+                          const isVid = isVideoItem(photo)
                           return (
                             <div
                               key={photo.id}
-                              onClick={() => setActiveLightbox({ collection, photoIndex: actualIdx })}
+                              onClick={() => setActiveLightbox({ collection, photoIndex: actualIdx !== -1 ? actualIdx : 0 })}
                               className="group relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/50 cursor-pointer shadow-2xs hover:opacity-95 hover:scale-[1.02] transition-all select-none"
                               title={photo.name}
                             >
@@ -1140,6 +1276,20 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                                 className="w-full h-full object-cover"
                                 loading="lazy"
                               />
+                              {isVid && (
+                                <>
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
+                                    <div className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-xs shadow-md group-hover:scale-110 transition-transform">
+                                      <Play className="h-4 w-4 fill-white text-white translate-x-0.5" />
+                                    </div>
+                                  </div>
+                                  <div className="absolute top-1.5 left-1.5 pointer-events-none">
+                                    <span className="text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-600 text-white shadow-xs">
+                                      ▶ MP4
+                                    </span>
+                                  </div>
+                                </>
+                              )}
                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <Eye className="h-4 w-4 text-white drop-shadow-sm" />
                               </div>
@@ -1148,65 +1298,76 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                         })}
                       </div>
                     ) : (
-                      /* Detailed interactive photo cards when 8 or fewer photos */
+                      /* Detailed interactive cards when 8 or fewer photos */
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
-                        {photosList.map((photo, idx) => (
-                          <div
-                            key={photo.id}
-                            className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-2.5 flex items-center gap-3 text-left shadow-2xs"
-                          >
+                        {filteredList.map((photo) => {
+                          const actualIdx = photosList.findIndex((p) => p.id === photo.id)
+                          const isVid = isVideoItem(photo)
+                          return (
                             <div
-                              onClick={() => setActiveLightbox({ collection, photoIndex: idx })}
-                              className="h-12 w-14 rounded-lg overflow-hidden shrink-0 bg-muted cursor-pointer border border-border/60 hover:opacity-90 transition-opacity"
+                              key={photo.id}
+                              className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-2.5 flex items-center gap-3 text-left shadow-2xs"
                             >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={photo.thumbnailUrl || photo.url || (photo as any).originalUrl} alt={photo.name} className="h-full w-full object-cover" loading="lazy" />
+                              <div
+                                onClick={() => setActiveLightbox({ collection, photoIndex: actualIdx !== -1 ? actualIdx : 0 })}
+                                className="relative h-12 w-14 rounded-lg overflow-hidden shrink-0 bg-muted cursor-pointer border border-border/60 hover:opacity-90 transition-opacity"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={photo.thumbnailUrl || photo.url || (photo as any).originalUrl} alt={photo.name} className="h-full w-full object-cover" loading="lazy" />
+                                {isVid && (
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/30">
+                                    <Play className="h-3.5 w-3.5 fill-white text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-foreground truncate" title={photo.name}>
+                                  {photo.name}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-medium">
+                                  {isVid ? "MP4 VIDEO" : photo.type?.includes("png") ? "PNG" : "JPG"} • {photo.size ? `${(photo.size / (1024 * 1024)).toFixed(1)} MB` : isVid ? "Video" : "Image"}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSinglePhoto(photo, collection.name)}
+                                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                title={isVid ? "Download this video" : "Download this photo"}
+                              >
+                                <Download className="h-4 w-4" />
+                              </button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-foreground truncate" title={photo.name}>
-                                {photo.name}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground uppercase font-medium">
-                                {photo.type?.includes("png") ? "PNG" : "JPG"} • {photo.size ? `${(photo.size / (1024 * 1024)).toFixed(1)} MB` : "Image"}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadSinglePhoto(photo, collection.name)}
-                              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                              title="Download this photo"
-                            >
-                              <Download className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Bottom Row: Pill Button on the Right: "Show All" / "Show Less" */}
-                <div className="flex items-center justify-end pt-1">
-                  <button
-                    type="button"
-                    onClick={() => toggleAccordion(collection.id)}
-                    className="inline-flex items-center justify-center rounded-full border border-blue-400 bg-blue-50/40 hover:bg-blue-100/80 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 dark:border-blue-500/60 text-[#4472C4] dark:text-blue-400 text-xs font-semibold px-4 py-1 transition-all shadow-2xs cursor-pointer select-none"
-                  >
-                    {isExpanded ? "Show Less" : "Show All"}
-                  </button>
-                </div>
+                {/* Bottom Row: Pill Button on the Right: "Show More" / "Show Less" */}
+                {filteredList.length > TOTAL_SLOTS && (
+                  <div className="flex items-center justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleAccordion(collection.id)}
+                      className="inline-flex items-center justify-center rounded-full border border-blue-400 bg-blue-50/40 hover:bg-blue-100/80 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 dark:border-blue-500/60 text-[#4472C4] dark:text-blue-400 text-xs font-semibold px-4 py-1 transition-all shadow-2xs cursor-pointer select-none"
+                    >
+                      {isExpanded ? "Show Less" : `View More (${filteredList.length - TOTAL_SLOTS}+)`}
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
         </div>
       )}
 
-      {/* Hidden File Input for Direct (+) Photo Upload */}
+      {/* Hidden File Input for Direct (+) Photo/Video Upload */}
       <input
         ref={directFileInputRef}
         type="file"
         multiple
-        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+        accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.m4v,.mkv,.avi,image/*,video/*"
         className="hidden"
         onChange={handleDirectFileChange}
       />
@@ -1241,15 +1402,15 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
           if (deleteTarget) {
             deleteAsset(deleteTarget.id)
             const isEmp = deleteTarget.subCategory === "Employee"
-            toast.success(`${isEmp ? "Employee photo" : "Photo collection"} "${deleteTarget.name}" deleted.`)
+            toast.success(`${isEmp ? "Employee photo" : "Collection"} "${deleteTarget.name}" deleted.`)
             setDeleteTarget(null)
           }
         }}
         title={`Delete ${deleteTarget?.subCategory === "Employee" ? "Employee Photo" : deleteTarget?.subCategory === "Site" ? "Site" : "Event"}`}
-        description={`Are you sure you want to delete "${deleteTarget?.name}"? ${deleteTarget?.subCategory === "Employee" ? "This employee photo will be permanently removed from the repository." : "All photos in this collection will be permanently removed."}`}
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? ${deleteTarget?.subCategory === "Employee" ? "This employee photo will be permanently removed from the repository." : "All photos and videos in this collection will be permanently removed."}`}
       />
 
-      {/* Full-Screen Interactive Lightbox Viewer (Letterhead-style frosted canvas with row list of photos) */}
+      {/* Full-Screen Interactive Lightbox Viewer (Letterhead-style frosted canvas with row list of photos/videos) */}
       {activeLightbox && (
         <Dialog
           open={!!activeLightbox}
@@ -1261,24 +1422,37 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
             showCloseButton={true}
           >
             <DialogTitle className="sr-only">
-              {lightboxTitle || "Photo Viewer"}
+              {lightboxTitle || "Photo/Video Viewer"}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              {lightboxSubTitle || "Photo repository high-resolution preview"}
+              {lightboxSubTitle || "Photos and videos repository high-resolution preview"}
             </DialogDescription>
 
-            {/* Main Stage: Interactive Image Canvas (Letterhead engine with wheel zoom, drag-to-pan & zoom slider) */}
+            {/* Main Stage: Interactive Image Canvas or HTML5 Video Player */}
             <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden">
               {currentPhotoUrl ? (
-                <InteractiveImageCanvas
-                  key={currentPhotoUrl}
-                  src={currentPhotoUrl}
-                  alt={lightboxTitle}
-                  title={lightboxTitle}
-                  subTitle={lightboxSubTitle}
-                />
+                isVideoItem(currentPhotoItem) ? (
+                  <div className="relative w-full h-full flex flex-col items-center justify-center p-4 sm:p-8">
+                    <video
+                      key={currentPhotoUrl}
+                      src={currentPhotoUrl}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="max-h-[72vh] max-w-[92vw] rounded-2xl shadow-2xl border border-white/15 object-contain bg-black"
+                    />
+                  </div>
+                ) : (
+                  <InteractiveImageCanvas
+                    key={currentPhotoUrl}
+                    src={currentPhotoUrl}
+                    alt={lightboxTitle}
+                    title={lightboxTitle}
+                    subTitle={lightboxSubTitle}
+                  />
+                )
               ) : (
-                <div className="text-white/60 text-sm">No photo available</div>
+                <div className="text-white/60 text-sm">No preview available</div>
               )}
 
               {/* Navigation Chevrons (Previous / Next) */}
@@ -1288,7 +1462,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                     type="button"
                     onClick={handleLightboxPrevious}
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-black/35 hover:bg-black/65 border border-white/15 text-white backdrop-blur-md transition-all cursor-pointer z-30 shadow-lg active:scale-95 hover:scale-105"
-                    title="Previous photo (Left Arrow)"
+                    title="Previous item (Left Arrow)"
                   >
                     <ChevronLeft className="h-6 w-6" />
                   </button>
@@ -1296,7 +1470,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                     type="button"
                     onClick={handleLightboxNext}
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-black/35 hover:bg-black/65 border border-white/15 text-white backdrop-blur-md transition-all cursor-pointer z-30 shadow-lg active:scale-95 hover:scale-105"
-                    title="Next photo (Right Arrow)"
+                    title="Next item (Right Arrow)"
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
@@ -1304,7 +1478,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
               )}
             </div>
 
-            {/* Bottom Bar: Row of all Photos + Quick Actions */}
+            {/* Bottom Bar: Row of all Photos/Videos + Quick Actions */}
             <div className="w-full bg-black/35 backdrop-blur-md border-t border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 z-30 shrink-0">
               {/* Left: Category Badge & Original Quality indicator */}
               <div className="hidden sm:flex items-center gap-2.5 shrink-0">
@@ -1326,7 +1500,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                 </div>
               </div>
 
-              {/* Center: List of all photos in rows / thumbnail strip */}
+              {/* Center: List of all photos/videos in rows / thumbnail strip */}
               {lightboxThumbnails.length > 1 ? (
                 <div
                   onWheel={(e) => {
@@ -1340,6 +1514,7 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                     const isCurrent = isEmployeeLightbox
                       ? activeLightbox.collection.id === item.id
                       : activeLightbox.photoIndex === idx
+                    const isVid = isVideoItem(item.photoItem)
 
                     return (
                       <button
@@ -1368,6 +1543,11 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
+                        {isVid && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/35">
+                            <Play className="h-3.5 w-3.5 fill-white text-white" />
+                          </div>
+                        )}
                         <span className="absolute bottom-0 right-0 bg-black/75 text-[9px] text-white/90 px-1 font-mono font-bold rounded-tl leading-tight">
                           {idx + 1}
                         </span>
@@ -1379,9 +1559,9 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                 <div className="flex-1" />
               )}
 
-              {/* Right: Quick Download Actions (Letterhead style green button & ZIP) */}
+              {/* Right: Quick Download Actions */}
               <div className="flex items-center gap-2 shrink-0">
-                {/* Download Single Photo Button */}
+                {/* Download Single Photo or Video Button */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1392,10 +1572,12 @@ export function PhotosSection({ searchQuery: externalSearch = "" }: PhotosSectio
                     }
                   }}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#548235] text-white hover:bg-[#60963c] transition-all text-xs font-bold shadow-md active:scale-95 cursor-pointer"
-                  title="Download photo in original quality"
+                  title="Download item in original quality"
                 >
                   <Download className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Download Photo</span>
+                  <span className="hidden sm:inline">
+                    {isVideoItem(currentPhotoItem) ? "Download Video" : "Download Photo"}
+                  </span>
                 </button>
 
                 {/* Download All (ZIP) button */}

@@ -56,7 +56,7 @@ export const DEFAULT_PORTAL_MODULES: PortalModuleOption[] = [
   {
     id: "photos",
     slug: "photos",
-    name: "Photo Repository",
+    name: "Photos and Videos Repository",
     badgeColor: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20",
   },
 ]

@@ -376,10 +376,26 @@ nextjs-portal,
   initial-value: 0px;
 }
 
+@property --theme-x {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --theme-y {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+::view-transition,
+::view-transition-group(root),
+::view-transition-image-pair(root),
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+  pointer-events: none !important;
 }
 
 ::view-transition-old(root) {
@@ -432,7 +448,7 @@ nextjs-portal,
 }
 
 .theme-circular-wave-anim {
-  animation: themeCircularWaveExpand 1860ms cubic-bezier(0.12, 1, 0.28, 1) forwards;
+  animation: themeCircularWaveExpand 2790ms cubic-bezier(0.12, 1, 0.28, 1) forwards;
   will-change: transform, opacity;
 }
 
@@ -603,6 +619,20 @@ nextjs-portal,
   50% {
     transform: rotate(-16deg);
   }
+}
+
+@keyframes shinchanStrollAcross {
+  0% {
+    transform: translate3d(-460px, 0, 0);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 460px), 0, 0);
+  }
+}
+
+.shinchan-stroll-track {
+  animation: shinchanStrollAcross 18s linear forwards;
+  will-change: transform;
 }
 
 .shinchan-sprint-master {

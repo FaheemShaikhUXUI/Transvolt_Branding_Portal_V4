@@ -4,8 +4,6 @@ import * as React from "react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
-const IDLE_TIMEOUT_MS = 59 * 1000 // 59 seconds inactivity threshold
-const WALK_DURATION_MS = 18 * 1000 // 18 seconds to leisurely stroll across the screen
 const SPRINT_OUT_DURATION_MS = 420 // Fast sprint out on click
 
 // Exactly 7 small white birds randomly flying in the upper empty space
@@ -23,83 +21,20 @@ export function ShinchanIdleScreensaver() {
   const pathname = usePathname()
   const [isIdle, setIsIdle] = React.useState(false)
   const [isRunningOut, setIsRunningOut] = React.useState(false)
-  const [shinchanPos, setShinchanPos] = React.useState({ x: -380, y: 0 })
   const [runStartX, setRunStartX] = React.useState(0)
   
-  const idleTimerRef = React.useRef<NodeJS.Timeout | null>(null)
-  const walkAnimFrameRef = React.useRef<number | null>(null)
-  const walkStartTimeRef = React.useRef<number>(0)
   const shinchanContainerRef = React.useRef<HTMLDivElement | null>(null)
   const isRunningOutRef = React.useRef(false)
   const isIdleRef = React.useRef(false)
+  const sprintTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   // Sync refs for event handlers
   isIdleRef.current = isIdle
   isRunningOutRef.current = isRunningOut
 
-  // Reset the 35s inactivity timer
-  const resetIdleTimer = React.useCallback(() => {
-    if (idleTimerRef.current) {
-      clearTimeout(idleTimerRef.current)
-    }
-    idleTimerRef.current = setTimeout(() => {
-      // If a modal or popout is actively open, postpone screensaver
-      const hasOpenModal = typeof document !== "undefined" && document.querySelector('.z-\\[100\\], [role="dialog"]')
-      if (hasOpenModal) {
-        resetIdleTimer()
-        return
-      }
-      startWalking()
-    }, IDLE_TIMEOUT_MS)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Start walking stroll across screen (grounded at bottom: 0px)
-  const startWalking = React.useCallback(() => {
-    if (typeof window === "undefined") return
-
-    if (walkAnimFrameRef.current) {
-      cancelAnimationFrame(walkAnimFrameRef.current)
-      walkAnimFrameRef.current = null
-    }
-
-    setIsIdle(true)
-    setIsRunningOut(false)
-
-    const screenWidth = window.innerWidth
-    const startX = -620
-    const endX = screenWidth + 360
-    const distance = endX - startX
-
-    walkStartTimeRef.current = performance.now()
-
-    const step = (now: number) => {
-      if (isRunningOutRef.current) return
-
-      const elapsed = now - walkStartTimeRef.current
-      const progress = elapsed / WALK_DURATION_MS
-
-      if (progress >= 1) {
-        // Shinchan finished walking across screen
-        walkStartTimeRef.current = now
-      }
-
-      const currentX = startX + (progress % 1) * distance
-      setShinchanPos({ x: currentX, y: 0 })
-      walkAnimFrameRef.current = requestAnimationFrame(step)
-    }
-
-    walkAnimFrameRef.current = requestAnimationFrame(step)
-  }, [])
-
-  // Trigger fast sprint out on CLICK anywhere in screen
-  // (Applies to BOTH 20s idle mode and Smiley Button mode: clicking anywhere moves Shinchan fast!)
+  // Trigger fast sprint out on click or interaction
   const triggerFastSprint = React.useCallback(() => {
     if (!isIdleRef.current || isRunningOutRef.current) return
-
-    if (walkAnimFrameRef.current) {
-      cancelAnimationFrame(walkAnimFrameRef.current)
-      walkAnimFrameRef.current = null
-    }
 
     // Freeze current position and start sprint
     let currentX = -380
@@ -110,67 +45,86 @@ export function ShinchanIdleScreensaver() {
     setRunStartX(currentX)
     setIsRunningOut(true)
 
-    // After sprint finishes (420ms), hide screensaver and reset 20s idle timer
-    setTimeout(() => {
+    if (sprintTimeoutRef.current) clearTimeout(sprintTimeoutRef.current)
+    sprintTimeoutRef.current = setTimeout(() => {
       setIsIdle(false)
       setIsRunningOut(false)
-      resetIdleTimer()
     }, SPRINT_OUT_DURATION_MS + 50)
-  }, [resetIdleTimer])
+  }, [])
 
-  // Inactivity detection: ONLY resets 20s timer while screensaver is NOT active
-  // Mouse movement or hover while screensaver is visible DOES NOT dismiss or sprint Shinchan!
+  // Start walking stroll across screen via pure GPU CSS keyframes (NO 120Hz React state re-renders)
+  const startWalking = React.useCallback(() => {
+    if (typeof window === "undefined") return
+    if (sprintTimeoutRef.current) clearTimeout(sprintTimeoutRef.current)
+    setIsRunningOut(false)
+    setIsIdle(true)
+  }, [])
+
+  // Inactivity / Activity management:
+  // Note: We deliberately do NOT auto-launch on an idle timer to prevent hijacking user screen.
+  // The animation is triggered ONLY when clicking the smiley button in the header.
+  // When active, any user activity (mousemove, keydown, click, scroll) dismisses it instantly!
   React.useEffect(() => {
     if (typeof window === "undefined" || pathname === "/login") return
 
-    const activityEvents = [
-      "mousemove",
-      "mousedown",
-      "keydown",
-      "touchstart",
-      "wheel",
-      "scroll",
-    ]
+    const dismissEvents = ["keydown", "touchstart", "wheel", "scroll"]
 
-    const onUserActivity = () => {
-      // If screensaver is NOT active, reset the 20-second inactivity timer
-      if (!isIdleRef.current) {
-        resetIdleTimer()
+    const onUserInteraction = () => {
+      if (isIdleRef.current && !isRunningOutRef.current) {
+        triggerFastSprint()
       }
-      // Note: While screensaver is active, mousemove or hover does NOT dismiss Shinchan!
     }
 
-    // Start initial 20s timer
-    resetIdleTimer()
-
-    activityEvents.forEach((evt) => {
-      window.addEventListener(evt, onUserActivity, { passive: true })
+    dismissEvents.forEach((evt) => {
+      window.addEventListener(evt, onUserInteraction, { passive: true })
     })
 
-    // Custom event dispatched by Header smiley button for immediate view / run
-    const onImmediateTrigger = () => {
+    // Custom event dispatched by Header smiley button for intentional viewing
+    const onManualTrigger = () => {
       if (isIdleRef.current && !isRunningOutRef.current) {
         triggerFastSprint()
       } else {
         startWalking()
       }
     }
-    window.addEventListener("trigger-shinchan-screensaver", onImmediateTrigger)
+    window.addEventListener("trigger-shinchan-screensaver", onManualTrigger)
 
     return () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
-      if (walkAnimFrameRef.current) cancelAnimationFrame(walkAnimFrameRef.current)
-      activityEvents.forEach((evt) => {
-        window.removeEventListener(evt, onUserActivity)
+      if (sprintTimeoutRef.current) clearTimeout(sprintTimeoutRef.current)
+      dismissEvents.forEach((evt) => {
+        window.removeEventListener(evt, onUserInteraction)
       })
-      window.removeEventListener("trigger-shinchan-screensaver", onImmediateTrigger)
+      window.removeEventListener("trigger-shinchan-screensaver", onManualTrigger)
     }
-  }, [pathname, resetIdleTimer, startWalking, triggerFastSprint])
+  }, [pathname, startWalking, triggerFastSprint])
 
   if (pathname === "/login" || !isIdle) return null
 
   return (
     <>
+      {/* Top Center Note: "Shinchan’s here! Click to shoo him away! 😄" */}
+      <div
+        className={cn(
+          "fixed top-6 left-1/2 -translate-x-1/2 z-[999998] transition-all duration-500 pointer-events-auto select-none",
+          isRunningOut
+            ? "opacity-0 -translate-y-4 scale-95 pointer-events-none"
+            : "opacity-100 translate-y-0 scale-100 animate-in fade-in slide-in-from-top-4"
+        )}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            triggerFastSprint()
+          }}
+          className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-black/30 text-white border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-md cursor-pointer hover:bg-black/45 hover:border-white/35 hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <span className="text-xs sm:text-sm font-medium tracking-wide text-white drop-shadow-sm">
+            Shinchan’s here! Click to shoo him away! 😄
+          </span>
+        </button>
+      </div>
+
       {/* 1) 20% Background Blur & Dimming Overlay - Click anywhere triggers fast sprint */}
       <div
         aria-hidden="true"
@@ -233,19 +187,26 @@ export function ShinchanIdleScreensaver() {
       >
         <div
           ref={shinchanContainerRef}
+          onAnimationEnd={() => {
+            if (!isRunningOut) {
+              setIsIdle(false)
+            }
+          }}
           style={{
             position: "absolute",
-            bottom: "0px", // Touching the bottom of screen directly (no flying)
-            left: isRunningOut ? `${runStartX}px` : `${shinchanPos.x}px`,
-            transform: isRunningOut
-              ? "translateX(calc(100vw + 500px))"
-              : "none",
-            transition: isRunningOut
-              ? `transform ${SPRINT_OUT_DURATION_MS}ms cubic-bezier(0.35, 0, 0.2, 1)`
-              : "none",
-            willChange: "transform, left",
+            bottom: "0px",
+            ...(isRunningOut
+              ? {
+                  left: `${runStartX}px`,
+                  transform: "translateX(calc(100vw + 500px))",
+                  transition: `transform ${SPRINT_OUT_DURATION_MS}ms cubic-bezier(0.35, 0, 0.2, 1)`,
+                }
+              : {
+                  left: 0,
+                }),
+            willChange: "transform",
           }}
-          className="select-none"
+          className={cn("select-none", !isRunningOut && "shinchan-stroll-track")}
         >
           {/* 1) Pure White Text on the Back Side (Left Side) of Shinchan - Full Visibility, No BG, No Shaking */}
           <div

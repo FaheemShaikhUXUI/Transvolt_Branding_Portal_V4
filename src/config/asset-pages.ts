@@ -79,9 +79,9 @@ export const assetPagesConfig: Record<string, AssetPageConfig> = {
   },
   "photos": {
     slug: "photos",
-    title: "Photo Repository",
-    description: "Manage official company photography and image libraries.",
-    emptyStateTitle: "No photos found",
-    emptyStateDescription: "Upload official company photography.",
+    title: "Photos and Videos Repository",
+    description: "Manage official company photography, video libraries and media assets.",
+    emptyStateTitle: "No photos or videos found",
+    emptyStateDescription: "Upload official company photography and video assets.",
   },
 }

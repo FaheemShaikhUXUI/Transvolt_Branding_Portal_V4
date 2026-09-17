@@ -75,6 +75,70 @@ function createSitePhotoSvg(
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
+function createSiteVideoSvg(
+  title: string,
+  subtitle: string,
+  badgeText: string,
+  bgColor1: string,
+  bgColor2: string,
+  accentColor: string
+): string {
+  const safeTitle = title.replace(/&/g, "&amp;")
+  const safeSubtitle = subtitle.replace(/&/g, "&amp;")
+  const safeBadge = badgeText.replace(/&/g, "&amp;")
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${bgColor1}"/>
+        <stop offset="100%" stop-color="${bgColor2}"/>
+      </linearGradient>
+      <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="${accentColor}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    
+    <!-- Background Canvas -->
+    <rect width="1200" height="900" fill="url(#bg)"/>
+    <rect width="1200" height="900" fill="url(#glow)"/>
+    
+    <!-- Video Play Central Graphic -->
+    <g transform="translate(600, 360)">
+      <circle cx="0" cy="0" r="115" fill="none" stroke="${accentColor}" stroke-width="4" stroke-dasharray="12 8" opacity="0.8"/>
+      <circle cx="0" cy="0" r="90" fill="${accentColor}" fill-opacity="0.25"/>
+      <!-- Play Triangle -->
+      <polygon points="-25,-45 50,0 -25,45" fill="#ffffff"/>
+    </g>
+
+    <!-- Outer Structural Frame -->
+    <rect x="50" y="50" width="1100" height="800" rx="28" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2.5"/>
+
+    <!-- Video Category Tag Pill -->
+    <g transform="translate(90, 95)">
+      <rect width="160" height="38" rx="19" fill="#E11D48" fill-opacity="0.9" stroke="#ffffff" stroke-width="1.5"/>
+      <polygon points="20,13 32,19 20,25" fill="#ffffff"/>
+      <text x="42" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="900" fill="#ffffff" letter-spacing="1.5">${safeBadge}</text>
+    </g>
+
+    <!-- Transvolt Header -->
+    <text x="1110" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="900" fill="rgba(255,255,255,0.8)" text-anchor="end" letter-spacing="3">TRANSVOLT VIDEO REPOSITORY</text>
+
+    <!-- Title & Description -->
+    <text x="600" y="540" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">${safeTitle}</text>
+    <text x="600" y="585" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="500" fill="rgba(255,255,255,0.8)" text-anchor="middle">${safeSubtitle}</text>
+
+    <!-- Metadata Footer Bar -->
+    <g transform="translate(90, 750)">
+      <rect width="1020" height="54" rx="14" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+      <text x="25" y="33" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="rgba(255,255,255,0.9)">FORMAT: MP4 • 4K ULTRA HD • 60 FPS AUDIO</text>
+      <text x="995" y="33" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="${accentColor}" text-anchor="end">LOSSLESS STREAM READY</text>
+    </g>
+  </svg>`
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
 export function getInitialSitePhotoAssets(): Asset[] {
   const bkcPhotos: PhotoItem[] = [
     {
@@ -261,6 +325,40 @@ export function getInitialSitePhotoAssets(): Asset[] {
       type: "image/jpeg",
       uploadedAt: "02 September 2026",
     },
+    {
+      id: "site_video_bkc_09",
+      name: "BKC_Mega_Hub_Aerial_Flythrough.mp4",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      originalUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      thumbnailUrl: createSiteVideoSvg(
+        "4K Drone Aerial Flythrough",
+        "BKC Mega Hub Operational Fleet & Solar Canopy",
+        "4K VIDEO",
+        "#030712",
+        "#111827",
+        "#F43F5E"
+      ),
+      size: 24800000,
+      type: "video/mp4",
+      uploadedAt: "02 September 2026",
+    },
+    {
+      id: "site_video_bkc_10",
+      name: "Fast_Charging_Automated_Sequence.mp4",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      originalUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      thumbnailUrl: createSiteVideoSvg(
+        "Automated Bay Connection Demo",
+        "Heavy EV Bus Fast Charge Connection Sequence",
+        "4K VIDEO",
+        "#0F172A",
+        "#1E293B",
+        "#E11D48"
+      ),
+      size: 19500000,
+      type: "video/mp4",
+      uploadedAt: "02 September 2026",
+    },
   ]
 
   const bengaluruPhotos: PhotoItem[] = [
@@ -400,6 +498,23 @@ export function getInitialSitePhotoAssets(): Asset[] {
       ),
       size: 4120000,
       type: "image/jpeg",
+      uploadedAt: "28 August 2026",
+    },
+    {
+      id: "site_video_blr_07",
+      name: "Bengaluru_Fleet_Night_TimeLapse.mp4",
+      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      originalUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      thumbnailUrl: createSiteVideoSvg(
+        "Night Fleet Operations Time-Lapse",
+        "Electronic City Terminal 12-Hour Continuous Charging Cycle",
+        "4K VIDEO",
+        "#09090B",
+        "#18181B",
+        "#E11D48"
+      ),
+      size: 31200000,
+      type: "video/mp4",
       uploadedAt: "28 August 2026",
     },
   ]

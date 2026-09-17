@@ -43,8 +43,9 @@ interface UploadedPhoto {
   size: number
   previewUrl: string // Fast thumbnail for gallery cards and grid previews
   base64: string // Original quality raw data
-  originalUrl: string // 100% UNCOMPRESSED, UNRESIZED ORIGINAL PHOTO
-  format: "JPG" | "PNG"
+  originalUrl: string // 100% UNCOMPRESSED, UNRESIZED ORIGINAL PHOTO/VIDEO
+  format: "JPG" | "PNG" | "MP4" | "VIDEO"
+  isVideo?: boolean
 }
 
 interface UploadProgressState {
@@ -253,15 +254,108 @@ export async function generateFastThumbnail(source: File | string, maxDim: numbe
 }
 
 /**
- * Reads 100% full-resolution untouched photo for Photo Viewer & lossless downloads,
+ * Checks if a file or item is a video by MIME type or extension
+ */
+export function isVideoFile(file: File | { name: string; type?: string }): boolean {
+  if (file.type && file.type.toLowerCase().startsWith("video/")) return true
+  const name = (file.name || "").toLowerCase()
+  const videoExts = [".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv", ".ogv", ".3gp"]
+  return videoExts.some((ext) => name.endsWith(ext))
+}
+
+/**
+ * Extracts a crisp video frame thumbnail via HTML5 video + canvas
+ */
+export async function generateVideoThumbnail(source: File | string, maxDim: number = 480): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve("")
+      return
+    }
+
+    try {
+      const video = document.createElement("video")
+      video.preload = "metadata"
+      video.muted = true
+      video.playsInline = true
+      const url = typeof source === "string" ? source : URL.createObjectURL(source)
+      video.src = url
+
+      video.onloadeddata = () => {
+        video.currentTime = Math.min(0.5, (video.duration || 1) / 2)
+      }
+
+      video.onseeked = () => {
+        try {
+          const canvas = document.createElement("canvas")
+          let width = video.videoWidth || 480
+          let height = video.videoHeight || 270
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext("2d")
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, width, height)
+            const thumbUrl = canvas.toDataURL("image/jpeg", 0.8)
+            if (typeof source !== "string") URL.revokeObjectURL(url)
+            resolve(thumbUrl)
+            return
+          }
+        } catch {}
+        if (typeof source !== "string") URL.revokeObjectURL(url)
+        resolve("")
+      }
+
+      video.onerror = () => {
+        if (typeof source !== "string") URL.revokeObjectURL(url)
+        resolve("")
+      }
+    } catch {
+      resolve("")
+    }
+  })
+}
+
+export function createVideoPlaceholderSvg(name: string): string {
+  const safeName = (name || "Video").replace(/&/g, "&amp;").substring(0, 30)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="270" viewBox="0 0 480 270">
+    <rect width="480" height="270" fill="#0F172A"/>
+    <circle cx="240" cy="135" r="42" fill="#E11D48" opacity="0.9"/>
+    <polygon points="232,120 256,135 232,150" fill="#ffffff"/>
+    <text x="240" y="210" font-family="sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">${safeName}</text>
+  </svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+/**
+ * Reads 100% full-resolution untouched photo or video for Viewer & lossless downloads,
  * while generating a fast lightweight thumbnail for smooth gallery grid browsing.
- * For Event & Site: 70% more reduced thumbnail resolution (max 144px, quality 0.65, ~5-8 KB per photo)
- * For Employee: standard portrait circle thumbnail (max 480px, quality 0.8)
  */
 export async function compressImage(
   file: File,
   isEventOrSite: boolean = false
-): Promise<{ base64: string; previewUrl: string; originalUrl: string }> {
+): Promise<{ base64: string; previewUrl: string; originalUrl: string; isVideo?: boolean }> {
+  if (isVideoFile(file)) {
+    const maxDim = isEventOrSite ? 240 : 480
+    const videoThumb = await generateVideoThumbnail(file, maxDim)
+    const previewUrl = videoThumb || createVideoPlaceholderSvg(file.name)
+    const originalUrl = await readOriginalImage(file)
+    return {
+      base64: originalUrl,
+      originalUrl,
+      previewUrl,
+      isVideo: true,
+    }
+  }
+
   const originalUrl = await readOriginalImage(file)
   const maxDim = isEventOrSite ? 144 : 480
   const quality = isEventOrSite ? 0.65 : 0.8
@@ -270,6 +364,7 @@ export async function compressImage(
     base64: originalUrl, // 100% untouched original photo
     originalUrl, // 100% untouched original photo
     previewUrl: previewUrl || originalUrl, // Fast lightweight thumbnail for smooth gallery browsing
+    isVideo: false,
   }
 }
 
@@ -313,16 +408,16 @@ export function AddPhotoModal({
   const isEmployee = category === "Employee"
 
   const modalTitle = isSite
-    ? "+ Add Site Photos"
+    ? "+ Add Site Photos & Videos"
     : isEmployee
     ? "+ Add Employee Photos"
-    : "+ Add Event Photos"
+    : "+ Add Event Photos & Videos"
 
   const modalDescription = isSite
-    ? "Upload official site infrastructure photography, charging hubs, depots & installations."
+    ? "Upload official site infrastructure photography and videos, charging hubs, depots & installations."
     : isEmployee
     ? "Upload official employee, leadership & team photography."
-    : "Upload official company event photography, conferences, summits & celebrations."
+    : "Upload official company event photography, videos, conferences, summits & celebrations."
 
   const titleInputLabel = isSite
     ? "Title of Site / Images"
@@ -466,8 +561,9 @@ export function AddPhotoModal({
         const file = item.file
         const displayName = item.customName || file.name
         const ext = file.name.split(".").pop()?.toLowerCase()
+        const isVideo = isVideoFile(file)
         const isPng = ext === "png" || file.type === "image/png"
-        const format: "JPG" | "PNG" = isPng ? "PNG" : "JPG"
+        const format: "JPG" | "PNG" | "MP4" | "VIDEO" = isVideo ? "MP4" : isPng ? "PNG" : "JPG"
 
         setUploadProgress({
           isUploading: true,
@@ -477,10 +573,10 @@ export function AddPhotoModal({
         })
 
         const isEventOrSite = category === "Events" || category === "Site"
-        const { base64, previewUrl, originalUrl } = await compressImage(file, isEventOrSite)
+        const { previewUrl, originalUrl } = await compressImage(file, isEventOrSite)
 
         const photoObj: UploadedPhoto = {
-          id: "photo_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
+          id: (isVideo ? "video_" : "photo_") + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
           file,
           name: displayName,
           size: file.size,
@@ -488,6 +584,7 @@ export function AddPhotoModal({
           base64: originalUrl,
           originalUrl,
           format,
+          isVideo,
         }
 
         newPhotos.push(photoObj)
@@ -527,7 +624,7 @@ export function AddPhotoModal({
     }
   }
 
-  // Handle incoming files with smart duplicate identification
+  // Handle incoming files with smart duplicate identification (accepts JPG, PNG, and MP4 / any video format)
   const processFiles = async (fileList: FileList | File[]) => {
     const validFiles: File[] = []
     let hasInvalid = false
@@ -536,8 +633,10 @@ export function AddPhotoModal({
       const ext = file.name.split(".").pop()?.toLowerCase()
       const isJpg = ext === "jpg" || ext === "jpeg" || file.type === "image/jpeg"
       const isPng = ext === "png" || file.type === "image/png"
+      const isWebp = ext === "webp" || file.type === "image/webp"
+      const isVideo = isVideoFile(file)
 
-      if (isJpg || isPng) {
+      if (isJpg || isPng || isWebp || isVideo) {
         validFiles.push(file)
       } else {
         hasInvalid = true
@@ -545,7 +644,7 @@ export function AddPhotoModal({
     })
 
     if (hasInvalid) {
-      toast.warning("Only JPG and PNG images are allowed. Non-JPG/PNG files were excluded.")
+      toast.warning("Only JPG, PNG images and video files (MP4, WebM, MOV) are allowed.")
     }
 
     if (validFiles.length === 0) return
@@ -673,11 +772,12 @@ export function AddPhotoModal({
         thumbnailUrl: p.previewUrl || p.originalUrl, // Lightweight thumbnail for smooth gallery browsing
         originalUrl: p.originalUrl || p.base64, // 100% ORIGINAL RAW QUALITY (STORED IN VAULT)
         size: p.size,
-        type: p.format === "PNG" ? "image/png" : "image/jpeg",
+        type: p.isVideo ? (p.file.type || "video/mp4") : p.format === "PNG" ? "image/png" : "image/jpeg",
         uploadedAt: formattedDate,
       }))
 
       const primaryPhoto = photos[0]
+      const primaryFormat = primaryPhoto.isVideo ? "JPG" : primaryPhoto.format
 
       const newAsset: Asset = {
         id: "photo_col_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
@@ -692,7 +792,7 @@ export function AddPhotoModal({
         thumbnail: primaryPhoto.previewUrl || primaryPhoto.originalUrl, // Fast lightweight thumbnail
         photos: photoItems,
         formats: {
-          [primaryPhoto.format]: {
+          [primaryFormat]: {
             fileName: primaryPhoto.name,
             fileData: primaryPhoto.originalUrl || primaryPhoto.base64, // 100% ORIGINAL RAW QUALITY
           },
@@ -826,12 +926,12 @@ export function AddPhotoModal({
               </span>
             </div>
 
-            {/* Hidden Input for Initial Upload */}
+            {/* Hidden Input for Initial Selection */}
             <input
               ref={initialInputRef}
               type="file"
               multiple
-              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+              accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.m4v,.mkv,.avi,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/*"
               className="hidden"
               onChange={(e) => {
                 if (e.target.files) processFiles(e.target.files)
@@ -844,7 +944,7 @@ export function AddPhotoModal({
               ref={addMoreInputRef}
               type="file"
               multiple
-              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+              accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.m4v,.mkv,.avi,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/*"
               className="hidden"
               onChange={(e) => {
                 if (e.target.files) processFiles(e.target.files)
@@ -870,10 +970,10 @@ export function AddPhotoModal({
                   <UploadCloud className="h-7 w-7" />
                 </div>
                 <p className="text-sm font-semibold text-foreground">
-                  Click to select photos or drag &amp; drop here
+                  Click to select photos or videos, or drag &amp; drop here
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upload multiple photos • Strictly JPG &amp; PNG format
+                  Upload multiple media • JPG, PNG &amp; MP4 (all video formats supported)
                 </p>
               </div>
             ) : (
@@ -898,12 +998,14 @@ export function AddPhotoModal({
                           <span
                             className={cn(
                               "text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-xs tracking-wider",
-                              photo.format === "PNG"
+                              photo.isVideo || photo.format === "MP4"
+                                ? "bg-purple-600 text-white"
+                                : photo.format === "PNG"
                                 ? "bg-emerald-600 text-white"
                                 : "bg-blue-600 text-white"
                             )}
                           >
-                            {photo.format}
+                            {photo.isVideo ? "▶ MP4" : photo.format}
                           </span>
 
                           {photos.filter((p) => p.name.trim().toLowerCase() === photo.name.trim().toLowerCase()).length > 1 && (

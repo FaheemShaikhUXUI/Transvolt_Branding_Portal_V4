@@ -3,11 +3,6 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
   useCircularThemeTransition,
   ThemeCircularWavePortal,
 } from "./circular-theme-transition"
@@ -51,26 +46,51 @@ export function ThemeSelector() {
     },
   ]
 
+  const lastTriggerRef = React.useRef<{ theme: string; time: number }>({ theme: "", time: 0 })
+
   const activeIndex = Math.max(
     0,
     themes.findIndex((t) => t.id === currentTheme)
   )
+
+  // Instantaneous activation on pointerdown (sub-millisecond response) + onClick fallback
+  const handleActivate = (targetTheme: string, e: React.PointerEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    const now = Date.now()
+    if (lastTriggerRef.current.theme === targetTheme && now - lastTriggerRef.current.time < 350) {
+      return
+    }
+    lastTriggerRef.current = { theme: targetTheme, time: now }
+
+    const clientX = e.clientX || (e as any).nativeEvent?.clientX || 0
+    const clientY = e.clientY || (e as any).nativeEvent?.clientY || 0
+    const target = (e.currentTarget || e.target) as HTMLElement
+
+    switchTheme(targetTheme, {
+      clientX,
+      clientY,
+      currentTarget: target,
+      target,
+    } as any)
+  }
 
   return (
     <>
       <ThemeCircularWavePortal wave={wave} />
 
       <div 
-        className="relative flex items-center gap-1.5 p-1 rounded-full border border-border/60 bg-background/50 hover:bg-background/80 backdrop-blur-md transition-all shadow-xs"
+        className="relative inline-flex items-center p-0.5 rounded-full border border-border/60 bg-background/50 backdrop-blur-md shadow-xs select-none"
         role="group"
         aria-label="Theme Selection"
+        style={{ cursor: "pointer" }}
       >
-        {/* Smooth Sliding Active Capsule Ring Highlight (50% slower, gentle gliding) */}
+        {/* Smooth Sliding Active Capsule Ring Highlight */}
         {mounted && (
           <span 
-            className="absolute top-1 left-1 w-9 h-6 rounded-full border-2 border-[#4472C4] shadow-[0_0_8px_rgba(68,114,196,0.35)] pointer-events-none transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            className="absolute top-[2px] left-[2px] w-[38px] h-[26px] rounded-full border-2 border-[#4472C4] shadow-[0_0_8px_rgba(68,114,196,0.35)] pointer-events-none transition-transform duration-900 ease-[cubic-bezier(0.16,1,0.3,1)] z-0"
             style={{
-              transform: `translateX(${activeIndex * 42}px)`
+              transform: `translateX(${activeIndex * 40}px)`,
+              cursor: "pointer",
             }}
           />
         )}
@@ -79,29 +99,26 @@ export function ThemeSelector() {
           const isActive = currentTheme === t.id
 
           return (
-            <Tooltip key={t.id}>
-              <TooltipTrigger render={
-                <button
-                  type="button"
-                  onClick={(e) => switchTheme(t.id, e)}
-                  aria-label={`Switch to ${t.label}`}
-                  className="w-9 h-6 rounded-full relative z-10 flex items-center justify-center cursor-pointer transition-transform duration-200 active:scale-90 hover:scale-105"
-                >
-                  <span
-                    className={`w-6.5 h-3.5 rounded-full ${t.borderClass} transition-transform duration-300 block ${
-                      isActive ? "scale-105" : "scale-95 opacity-90"
-                    }`}
-                    style={{
-                      backgroundColor: t.color,
-                      boxShadow: isActive ? "0 0 4px rgba(0,0,0,0.25)" : "0 1px 2px rgba(0,0,0,0.08)",
-                    }}
-                  />
-                </button>
-              } />
-              <TooltipContent side="bottom">
-                <p className="text-xs font-semibold">{t.label}</p>
-              </TooltipContent>
-            </Tooltip>
+            <button
+              key={t.id}
+              type="button"
+              onPointerDown={(e) => handleActivate(t.id, e)}
+              onClick={(e) => handleActivate(t.id, e)}
+              aria-label={`Switch to ${t.label}`}
+              className="w-[40px] h-[26px] relative z-10 flex items-center justify-center select-none bg-transparent border-0 outline-none p-0 m-0"
+              style={{ cursor: "pointer" }}
+            >
+              <span
+                className={`w-6.5 h-3.5 rounded-full ${t.borderClass} block pointer-events-none transition-opacity duration-200 ${
+                  isActive ? "opacity-100" : "opacity-80"
+                }`}
+                style={{
+                  backgroundColor: t.color,
+                  boxShadow: isActive ? "0 0 4px rgba(0,0,0,0.25)" : "0 1px 2px rgba(0,0,0,0.08)",
+                  cursor: "pointer",
+                }}
+              />
+            </button>
           )
         })}
       </div>

@@ -323,7 +323,7 @@ export function AddEmployeePhotoModal({
       }
 
       addCustomAsset(newAsset)
-      toast.success(`Employee "${employeeName.trim()}" added to photo repository!`)
+      toast.success(`Employee "${employeeName.trim()}" added to photos & videos repository!`)
       handleClose()
       onSuccess?.()
     } catch (err) {

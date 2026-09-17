@@ -1389,17 +1389,17 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 13: PHOTO REPOSITORY (OPTION 2 STYLE)
+    // SLIDE 13: PHOTOS AND VIDEOS REPOSITORY (OPTION 2 STYLE)
     // -------------------------------------------------------------
     {
       id: 13,
-      category: "13 — Photo Repository",
-      title: "Photo Repository",
-      subtitle: "Transvolt's High-Resolution Visual Archive.",
+      category: "13 — Photos and Videos Repository",
+      title: "Photos and Videos Repository",
+      subtitle: "Transvolt's High-Resolution Media Archive.",
       render: () => (
         <SlideLayoutOption2
-          title="Photo Repository"
-          headline="Transvolt's Visual Archive"
+          title="Photos and Videos Repository"
+          headline="Transvolt's Visual & Media Archive"
           paragraph="Curated, high-resolution media gallery organized by operational milestones, site deployments, fleet rollouts, and employee achievements across all regional operations."
           bullets={[
             "Electric bus & commercial vehicle fleet rollouts on the road",

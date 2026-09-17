@@ -268,6 +268,23 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
         const hasSite = finalAssets.some((a) => a.category === "photos" && a.subCategory === "Site")
         if (!hasSite) {
           finalAssets = [...finalAssets, ...getInitialSitePhotoAssets()]
+        } else {
+          // Ensure existing stored site collections include seed video items
+          finalAssets = finalAssets.map((asset) => {
+            if (asset.id === "photo_col_site_bkc_hub" && !asset.photos?.some((p) => p.type?.includes("video") || p.name?.endsWith(".mp4"))) {
+              const seedBkc = getInitialSitePhotoAssets().find((a) => a.id === "photo_col_site_bkc_hub")
+              if (seedBkc?.photos) {
+                return { ...asset, photos: seedBkc.photos }
+              }
+            }
+            if (asset.id === "photo_col_site_bengaluru_depot" && !asset.photos?.some((p) => p.type?.includes("video") || p.name?.endsWith(".mp4"))) {
+              const seedBlr = getInitialSitePhotoAssets().find((a) => a.id === "photo_col_site_bengaluru_depot")
+              if (seedBlr?.photos) {
+                return { ...asset, photos: seedBlr.photos }
+              }
+            }
+            return asset
+          })
         }
 
         const hasEmployee = finalAssets.some((a) => a.category === "photos" && a.subCategory === "Employee")
@@ -302,119 +319,9 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
           return asset
         })
 
-        // Set state & persist complete master assets to IndexedDB
+        // Set state & persist master assets to IndexedDB
         setAssets(finalAssets)
         saveAllAssetsToDB(finalAssets).catch(() => {})
-
-        // Optimization pass for Event & Site thumbnails: ensure 70% reduced resolution (144px, quality 0.65)
-        const needsEventOrSiteOptimization = finalAssets.some(
-          (a) =>
-            a.category === "photos" &&
-            (a.subCategory === "Events" || a.subCategory === "Site") &&
-            a.photos?.some((p) => p.thumbnailUrl && p.thumbnailUrl.length > 30000)
-        )
-
-        if (needsEventOrSiteOptimization) {
-          Promise.all(
-            finalAssets.map(async (asset) => {
-              if (
-                asset.category !== "photos" ||
-                (asset.subCategory !== "Events" && asset.subCategory !== "Site")
-              ) {
-                return asset
-              }
-              const optimizedPhotos = await Promise.all(
-                (asset.photos || []).map(async (p) => {
-                  if (p.thumbnailUrl && p.thumbnailUrl.length > 30000) {
-                    const smallerThumb = await optimizeDataUrlThumbnail(p.thumbnailUrl, true)
-                    return {
-                      ...p,
-                      thumbnailUrl: smallerThumb,
-                      url: smallerThumb,
-                    }
-                  }
-                  return p
-                })
-              )
-              const primaryThumb = optimizedPhotos[0]?.thumbnailUrl || asset.thumbnail
-              return {
-                ...asset,
-                photos: optimizedPhotos,
-                thumbnail: primaryThumb,
-              }
-            })
-          ).then((optimizedAssets) => {
-            setAssets(optimizedAssets)
-            saveAllAssetsToDB(optimizedAssets).catch(() => {})
-          })
-        }
-
-        // Asynchronously hydrate full-resolution original photos from IndexedDB photo vault
-        const photoAssets = finalAssets.filter((a) => a.category === "photos")
-        const idsToFetch: string[] = []
-        photoAssets.forEach((a) => {
-          if (a.id) idsToFetch.push(a.id)
-          if (a.photos) {
-            a.photos.forEach((p) => {
-              if (p.id) idsToFetch.push(p.id)
-            })
-          }
-        })
-
-        if (idsToFetch.length > 0) {
-          const map = await getOriginalPhotosMap(idsToFetch)
-          if (map.size > 0) {
-            setAssets((currentAssets) => {
-              const hydrated = currentAssets.map((asset) => {
-                if (asset.category !== "photos") return asset
-                const isEventOrSite = asset.subCategory === "Events" || asset.subCategory === "Site"
-                const thumbThreshold = isEventOrSite ? 30000 : 500000
-                const colVaultOriginal = map.get(asset.id)
-                const hydratedPhotos = asset.photos?.map((photo) => {
-                  const originalData = map.get(photo.id)
-                  if (originalData) {
-                    const isExistingThumbFast = photo.thumbnailUrl && photo.thumbnailUrl.length < thumbThreshold
-                    const isExistingUrlFast = photo.url && photo.url.length < thumbThreshold
-                    return {
-                      ...photo,
-                      originalUrl: originalData,
-                      thumbnailUrl: isExistingThumbFast ? photo.thumbnailUrl : (isExistingUrlFast ? photo.url : photo.thumbnailUrl || originalData),
-                      url: (isExistingUrlFast ? photo.url : (isExistingThumbFast ? photo.thumbnailUrl : photo.url || originalData)) || "",
-                    } as PhotoItem
-                  }
-                  return photo
-                })
-
-                let updatedFormats = asset.formats
-                if (colVaultOriginal && updatedFormats) {
-                  const isPng = colVaultOriginal.startsWith("data:image/png")
-                  const formatKey = isPng ? "PNG" : "JPG"
-                  if (updatedFormats[formatKey]) {
-                    updatedFormats = {
-                      ...updatedFormats,
-                      [formatKey]: {
-                        ...updatedFormats[formatKey],
-                        fileData: colVaultOriginal,
-                      },
-                    }
-                  }
-                }
-
-                const isAssetThumbFast = asset.thumbnail && asset.thumbnail.length < 500000
-
-                return {
-                  ...asset,
-                  photos: hydratedPhotos || asset.photos,
-                  formats: updatedFormats,
-                  thumbnail: isAssetThumbFast ? asset.thumbnail : (colVaultOriginal || asset.thumbnail),
-                }
-              })
-
-              saveAllAssetsToDB(hydrated).catch(() => {})
-              return hydrated
-            })
-          }
-        }
       } catch (e) {
         console.error("Failed to initialize assets:", e)
       }
@@ -447,9 +354,9 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
     // 1. Immediate in-memory React state update (reactive UI)
     setAssets(newAssets)
 
-    // 2. Persist 100% full-resolution assets to IndexedDB photo vault (unlimited gigabyte quota)
+    // 2. Persist full-resolution assets to IndexedDB photo vault (unlimited quota)
     saveAllAssetsToDB(newAssets).catch((err) => {
-      console.warn("Failed to persist full-res assets to IndexedDB vault:", err)
+      console.warn("Failed to persist assets to IndexedDB vault:", err)
     })
 
     // 3. Batch save any photo items to the photo vault key-value store
@@ -472,39 +379,35 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
       saveOriginalPhotosBatch(itemsToVault).catch(() => {})
     }
 
-    // 4. Mirror lightweight metadata to localStorage without crashing browser 5MB limit
+    // 4. Mirror lightweight metadata to localStorage (always sanitize first to prevent memory spikes)
     try {
-      localStorage.setItem("branding_portal_assets", JSON.stringify(newAssets))
+      const sanitized = newAssets.map((a) => {
+        if (a.category !== "photos") return a
+        return {
+          ...a,
+          thumbnail: a.thumbnail && a.thumbnail.length > 25000 ? "" : a.thumbnail,
+          formats: a.formats
+            ? Object.fromEntries(
+                Object.entries(a.formats).map(([fmt, val]) => [
+                  fmt,
+                  {
+                    ...val,
+                    fileData: val.fileData && val.fileData.length > 25000 ? "vault-stored" : val.fileData,
+                  },
+                ])
+              )
+            : a.formats,
+          photos: a.photos?.map((p) => ({
+            ...p,
+            url: p.url && p.url.length > 25000 ? "" : p.url,
+            thumbnailUrl: p.thumbnailUrl && p.thumbnailUrl.length > 25000 ? "" : p.thumbnailUrl,
+            originalUrl: undefined,
+          })),
+        }
+      })
+      localStorage.setItem("branding_portal_assets", JSON.stringify(sanitized))
     } catch {
-      try {
-        // Strip heavy multi-megabyte base64 strings (> 20KB) from localStorage mirror
-        const sanitized = newAssets.map((a) => {
-          if (a.category !== "photos") return a
-          return {
-            ...a,
-            thumbnail: a.thumbnail && a.thumbnail.length > 20000 ? "" : a.thumbnail,
-            formats: a.formats
-              ? Object.fromEntries(
-                  Object.entries(a.formats).map(([fmt, val]) => [
-                    fmt,
-                    {
-                      ...val,
-                      fileData: val.fileData && val.fileData.length > 20000 ? "vault-stored" : val.fileData,
-                    },
-                  ])
-                )
-              : a.formats,
-            photos: a.photos?.map((p) => ({
-              ...p,
-              url: p.url && p.url.length > 20000 ? "" : p.url,
-              thumbnailUrl: p.thumbnailUrl && p.thumbnailUrl.length > 20000 ? "" : p.thumbnailUrl,
-            })),
-          }
-        })
-        localStorage.setItem("branding_portal_assets", JSON.stringify(sanitized))
-      } catch {
-        // Quota completely full: IndexedDB has the complete master copy
-      }
+      // Quota limit or serialization fallback: IndexedDB holds master assets
     }
   }
 
@@ -531,7 +434,7 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
       { title: "ID Cards & Business Cards", href: "/id-business-cards", icon: IdCard },
       { title: "Vehicle Branding", href: "/vehicle-branding", icon: Car },
       { title: "Charger Branding", href: "/charger-branding", icon: Zap },
-      { title: "Photo Repository", href: "/photos", icon: ImageIcon },
+      { title: "Photos and Videos Repository", href: "/photos", icon: ImageIcon },
     ]
 
     const customNav: NavigationItem[] = Object.values(customCategories).map((cat) => ({

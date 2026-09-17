@@ -13,6 +13,8 @@ import {
   Sparkles,
   Building2,
   Users,
+  Play,
+  Film,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -37,6 +39,7 @@ import {
   getTodayYMD,
   parseToYMD,
   formatDisplayDate,
+  isVideoFile,
 } from "./add-photo-modal"
 import { DuplicatePhotoDialog, DuplicateFileInfo } from "./duplicate-photo-dialog"
 import { saveOriginalPhotosBatch } from "@/lib/assets/photo-vault"
@@ -160,30 +163,31 @@ export function EditPhotoModal({
         const file = item.file
         const displayName = item.customName || file.name
         const isEventOrSite = category === "Events" || category === "Site"
-        const { base64, previewUrl, originalUrl } = await compressImage(file, isEventOrSite)
+        const { previewUrl, originalUrl, isVideo } = await compressImage(file, isEventOrSite)
+        const isVid = Boolean(isVideo || isVideoFile(file))
         newItems.push({
           id: "photo_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
           name: displayName,
           url: previewUrl || originalUrl, // Fast lightweight thumbnail
           thumbnailUrl: previewUrl || originalUrl, // Fast lightweight thumbnail
-          originalUrl: originalUrl, // 100% UNTOUCHED ORIGINAL RAW PHOTO
+          originalUrl: originalUrl, // 100% UNTOUCHED ORIGINAL RAW PHOTO OR VIDEO
           size: file.size,
-          type: file.type || "image/jpeg",
+          type: isVid ? (file.type || "video/mp4") : (file.type || "image/jpeg"),
           uploadedAt: todayFormatted,
         })
       }
 
       setPhotos((prev) => insertPhotosSideBySide(prev, newItems))
-      toast.success(`Added ${newItems.length} new photo${newItems.length > 1 ? "s" : ""}.`)
+      toast.success(`Added ${newItems.length} new item${newItems.length > 1 ? "s" : ""}.`)
     } catch (err) {
-      console.error("Error processing photos:", err)
-      toast.error("Failed to process some photos. Please try again.")
+      console.error("Error processing files:", err)
+      toast.error("Failed to process some files. Please try again.")
     } finally {
       setIsProcessing(false)
     }
   }
 
-  // Handle adding more photos with smart duplicate identification
+  // Handle adding more photos/videos with smart duplicate identification
   const processFiles = async (fileList: FileList | File[]) => {
     const validFiles: File[] = []
     let hasInvalid = false
@@ -192,8 +196,9 @@ export function EditPhotoModal({
       const ext = file.name.split(".").pop()?.toLowerCase()
       const isJpg = ext === "jpg" || ext === "jpeg" || file.type === "image/jpeg"
       const isPng = ext === "png" || file.type === "image/png"
+      const isVid = isVideoFile(file)
 
-      if (isJpg || isPng) {
+      if (isJpg || isPng || isVid) {
         validFiles.push(file)
       } else {
         hasInvalid = true
@@ -201,7 +206,7 @@ export function EditPhotoModal({
     })
 
     if (hasInvalid) {
-      toast.warning("Only JPG and PNG images are allowed. Non-JPG/PNG files were excluded.")
+      toast.warning("Only JPG, PNG images and video files (MP4, WebM, MOV, etc.) are allowed.")
     }
 
     if (validFiles.length === 0) return
@@ -373,22 +378,22 @@ export function EditPhotoModal({
   const isEmployee = category === "Employee"
 
   const modalTitle = isSite
-    ? "Edit Site Photos"
+    ? "Edit Site Photos & Videos"
     : isEmployee
-    ? "Edit Employee Photos"
-    : "Edit Event Photos"
+    ? "Edit Employee Photos & Videos"
+    : "Edit Event Photos & Videos"
 
   const modalDescription = isSite
-    ? "Update site collection title, add new photos, or delete existing photos."
+    ? "Update site collection title, add new photos or videos, or manage items."
     : isEmployee
-    ? "Update employee album title, add new photos, or delete existing photos."
-    : "Update collection title, add new photos, or delete existing photos."
+    ? "Update employee album title, add new photos or videos, or manage items."
+    : "Update collection title, add new photos or videos, or manage items."
 
   const titleInputLabel = isSite
-    ? "Title of Site / Images"
+    ? "Title of Site / Collection"
     : isEmployee
-    ? "Title of Album / Images"
-    : "Title of Event / Images"
+    ? "Title of Album / Collection"
+    : "Title of Event / Collection"
 
   const dateInputLabel = isSite
     ? "Date of Site"
@@ -434,7 +439,7 @@ export function EditPhotoModal({
           ref={addMoreInputRef}
           type="file"
           multiple
-          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+          accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.m4v,.mkv,.avi,image/*,video/*"
           className="hidden"
           onChange={(e) => {
             if (e.target.files) processFiles(e.target.files)
@@ -505,68 +510,85 @@ export function EditPhotoModal({
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <span>Manage Photos ({photos.length})</span>
+                <span>Manage Photos &amp; Videos ({photos.length})</span>
               </Label>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded border">
-                JPG &amp; PNG Only
+                JPG, PNG &amp; Videos
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {photos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="group relative rounded-xl border border-border bg-card overflow-hidden shadow-xs flex flex-col"
-                >
-                  <div className="relative aspect-4/3 w-full bg-muted overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.thumbnailUrl || photo.url}
-                      alt={photo.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
-                      <span
-                        className={cn(
-                          "text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-xs tracking-wider text-white",
-                          photo.type?.includes("png") ? "bg-emerald-600" : "bg-blue-600"
-                        )}
-                      >
-                        {photo.type?.includes("png") ? "PNG" : "JPG"}
-                      </span>
+              {photos.map((photo) => {
+                const isVideo = isVideoFile(photo)
+                return (
+                  <div
+                    key={photo.id}
+                    className="group relative rounded-xl border border-border bg-card overflow-hidden shadow-xs flex flex-col"
+                  >
+                    <div className="relative aspect-4/3 w-full bg-muted overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.thumbnailUrl || photo.url}
+                        alt={photo.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
 
-                      {photos.filter((p) => p.name.trim().toLowerCase() === photo.name.trim().toLowerCase()).length > 1 && (
-                        <span className="text-[8.5px] font-bold uppercase px-1.5 py-0.5 rounded shadow-xs tracking-wider bg-amber-500 text-neutral-900 border border-amber-600/30">
-                          Duplicate
-                        </span>
+                      {/* Video Play Overlay */}
+                      {isVideo && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/25">
+                          <div className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-xs shadow-md">
+                            <Play className="h-4 w-4 fill-white text-white translate-x-0.5" />
+                          </div>
+                        </div>
                       )}
+
+                      <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                        <span
+                          className={cn(
+                            "text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-xs tracking-wider text-white",
+                            isVideo
+                              ? "bg-rose-600"
+                              : photo.type?.includes("png")
+                              ? "bg-emerald-600"
+                              : "bg-blue-600"
+                          )}
+                        >
+                          {isVideo ? "▶ MP4" : photo.type?.includes("png") ? "PNG" : "JPG"}
+                        </span>
+
+                        {photos.filter((p) => p.name.trim().toLowerCase() === photo.name.trim().toLowerCase()).length > 1 && (
+                          <span className="text-[8.5px] font-bold uppercase px-1.5 py-0.5 rounded shadow-xs tracking-wider bg-amber-500 text-neutral-900 border border-amber-600/30">
+                            Duplicate
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemovePhoto(photo.id)
+                        }}
+                        className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 text-white hover:bg-red-600 transition-colors cursor-pointer"
+                        title={isVideo ? "Delete video" : "Delete photo"}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleRemovePhoto(photo.id)
-                      }}
-                      className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 text-white hover:bg-red-600 transition-colors cursor-pointer"
-                      title="Delete photo"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="p-2 flex flex-col gap-0.5 bg-card">
+                      <span className="text-[11px] font-medium text-foreground truncate" title={photo.name}>
+                        {photo.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {photo.size ? formatFileSize(photo.size) : isVideo ? "Video" : "Photo"}
+                      </span>
+                    </div>
                   </div>
+                )
+              })}
 
-                  <div className="p-2 flex flex-col gap-0.5 bg-card">
-                    <span className="text-[11px] font-medium text-foreground truncate" title={photo.name}>
-                      {photo.name}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {photo.size ? formatFileSize(photo.size) : "Photo"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-
-              {/* Dynamic (+) Add More Photos Tile */}
+              {/* Dynamic (+) Add More Photos & Videos Tile */}
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -578,13 +600,13 @@ export function EditPhotoModal({
                     ? "border-[#4472C4] bg-[#4472C4]/15 scale-[0.98]"
                     : "border-border/80 bg-muted/20 hover:border-[#4472C4] hover:bg-[#4472C4]/5 text-muted-foreground hover:text-[#4472C4]"
                 )}
-                title="Add more photos"
+                title="Add more photos or videos"
               >
                 <div className="p-2 rounded-full bg-muted text-foreground mb-1.5">
                   <Plus className="h-5 w-5" />
                 </div>
                 <span className="text-xs font-bold tracking-wide">+ Add More</span>
-                <span className="text-[9.5px] text-muted-foreground mt-0.5">JPG or PNG</span>
+                <span className="text-[9.5px] text-muted-foreground mt-0.5">JPG, PNG or Video</span>
               </div>
             </div>
 

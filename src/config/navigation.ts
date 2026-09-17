@@ -62,7 +62,7 @@ export const navigationConfig = [
     icon: MonitorPlay,
   },
   {
-    title: "Photo Repository",
+    title: "Photos and Videos Repository",
     href: "/photos",
     icon: ImageIcon,
   },

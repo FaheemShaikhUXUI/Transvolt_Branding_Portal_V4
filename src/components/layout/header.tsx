@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { Search, LogOut, Menu, Smile } from "lucide-react"
+import { Search, LogOut, Menu } from "lucide-react"
 import { BrandLogo } from "./brand-logo"
 import { useAuth } from "@/lib/auth/auth-context"
 import { useUserAccess } from "@/lib/user-access/user-access-context"
@@ -119,7 +119,7 @@ export function Header() {
           <TooltipContent>{user?.email} ({isSuperAdmin ? "Super Admin" : "In-House Person"})</TooltipContent>
         </Tooltip>
 
-        {/* Small Smiley Button to View Shinchan Animation */}
+        {/* Shinchan Action Button to View Shinchan Animation */}
         <Tooltip>
           <TooltipTrigger
             onClick={(e) => {
@@ -127,10 +127,9 @@ export function Header() {
               window.dispatchEvent(new CustomEvent("trigger-shinchan-screensaver"))
             }}
             render={
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full h-8 w-8 border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-600 transition-all hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+              <button
+                type="button"
+                className="relative h-9.5 w-8 p-0 transition-transform duration-200 hover:scale-115 active:scale-90 cursor-pointer flex items-center justify-center group shrink-0 bg-transparent border-none outline-none focus:outline-none"
                 onClick={(e) => {
                   e.stopPropagation()
                   window.dispatchEvent(new CustomEvent("trigger-shinchan-screensaver"))
@@ -138,7 +137,13 @@ export function Header() {
               />
             }
           >
-            <Smile className="h-4 w-4" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/shinchan-action.png"
+              alt="Shinchan Animation"
+              className="h-full w-auto object-contain filter drop-shadow-xs group-hover:-rotate-6 transition-transform select-none pointer-events-none"
+              draggable={false}
+            />
             <span className="sr-only">Shinchan Animation</span>
           </TooltipTrigger>
           <TooltipContent>Watch Shinchan Animation :)</TooltipContent>

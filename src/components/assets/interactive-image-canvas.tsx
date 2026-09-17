@@ -24,6 +24,7 @@ export function InteractiveImageCanvas({ src, alt, title, subTitle, className }:
   const currentRef = React.useRef({ scale: 1, x: 0, y: 0 })
   const targetRef = React.useRef({ scale: 1, x: 0, y: 0 })
   const isAnimatingRef = React.useRef(false)
+  const animFrameIdRef = React.useRef<number | null>(null)
   const dragStartRef = React.useRef({ x: 0, y: 0 })
 
   // High-DPI Lossless Canvas Renderer
@@ -131,6 +132,7 @@ export function InteractiveImageCanvas({ src, alt, title, subTitle, className }:
         setZoomScale(current.scale)
         renderCanvas()
         isAnimatingRef.current = false
+        animFrameIdRef.current = null
         return
       }
 
@@ -140,11 +142,20 @@ export function InteractiveImageCanvas({ src, alt, title, subTitle, className }:
 
       setZoomScale(current.scale)
       renderCanvas()
-      requestAnimationFrame(animate)
+      animFrameIdRef.current = requestAnimationFrame(animate)
     }
 
-    requestAnimationFrame(animate)
+    animFrameIdRef.current = requestAnimationFrame(animate)
   }, [renderCanvas])
+
+  // Cancel any active animation frame on unmount
+  React.useEffect(() => {
+    return () => {
+      if (animFrameIdRef.current) {
+        cancelAnimationFrame(animFrameIdRef.current)
+      }
+    }
+  }, [])
 
   // Load and cache full-resolution image whenever `src` changes
   React.useEffect(() => {

@@ -62,10 +62,24 @@ export function useCircularThemeTransition(
         return
       }
 
-      // Calculate origin coordinates (mouse click area)
-      const rect = event.currentTarget.getBoundingClientRect()
-      const x = event.clientX > 0 ? event.clientX : rect.left + rect.width / 2
-      const y = event.clientY > 0 ? event.clientY : rect.top + rect.height / 2
+      // Calculate exact origin coordinates (where mouse clicked the screen)
+      let x = (event as any)?.clientX ?? (event as any)?.nativeEvent?.clientX ?? 0
+      let y = (event as any)?.clientY ?? (event as any)?.nativeEvent?.clientY ?? 0
+
+      if (typeof x !== "number" || isNaN(x) || x <= 0 || typeof y !== "number" || isNaN(y) || y <= 0) {
+        const targetEl = (event?.currentTarget || event?.target) as HTMLElement | null
+        if (targetEl?.getBoundingClientRect) {
+          const rect = targetEl.getBoundingClientRect()
+          x = rect.left + rect.width / 2
+          y = rect.top + rect.height / 2
+        } else {
+          x = window.innerWidth / 2
+          y = 40
+        }
+      }
+
+      x = Math.round(x)
+      y = Math.round(y)
 
       // Calculate radius to furthest viewport corner
       const w = window.innerWidth
@@ -73,10 +87,46 @@ export function useCircularThemeTransition(
       const endRadius = Math.hypot(Math.max(x, w - x), Math.max(y, h - y))
       const targetRadius = endRadius + 600
 
-      // Set CSS variables on documentElement for the 520px soft feathered radial-gradient mask (ultra-deep soft diffusion)
+      // Set CSS variables on documentElement for custom property inheritance
       document.documentElement.style.setProperty("--theme-x", `${x}px`)
       document.documentElement.style.setProperty("--theme-y", `${y}px`)
       document.documentElement.style.setProperty("--mask-radius", "0px")
+
+      // Dynamically inject exact mask origin coordinates into style tag for 100% reliable positioning
+      let maskStyle = document.getElementById("theme-view-transition-coords") as HTMLStyleElement | null
+      if (!maskStyle) {
+        maskStyle = document.createElement("style")
+        maskStyle.id = "theme-view-transition-coords"
+        document.head.appendChild(maskStyle)
+      }
+      maskStyle.textContent = `
+        ::view-transition-new(root) {
+          -webkit-mask-image: radial-gradient(
+            circle at ${x}px ${y}px,
+            #000 0%,
+            #000 calc(var(--mask-radius, 0px) - 520px),
+            rgba(0, 0, 0, 0.94) calc(var(--mask-radius, 0px) - 420px),
+            rgba(0, 0, 0, 0.80) calc(var(--mask-radius, 0px) - 320px),
+            rgba(0, 0, 0, 0.60) calc(var(--mask-radius, 0px) - 220px),
+            rgba(0, 0, 0, 0.38) calc(var(--mask-radius, 0px) - 140px),
+            rgba(0, 0, 0, 0.18) calc(var(--mask-radius, 0px) - 70px),
+            rgba(0, 0, 0, 0.04) calc(var(--mask-radius, 0px) - 20px),
+            transparent var(--mask-radius, 0px)
+          ) !important;
+          mask-image: radial-gradient(
+            circle at ${x}px ${y}px,
+            #000 0%,
+            #000 calc(var(--mask-radius, 0px) - 520px),
+            rgba(0, 0, 0, 0.94) calc(var(--mask-radius, 0px) - 420px),
+            rgba(0, 0, 0, 0.80) calc(var(--mask-radius, 0px) - 320px),
+            rgba(0, 0, 0, 0.60) calc(var(--mask-radius, 0px) - 220px),
+            rgba(0, 0, 0, 0.38) calc(var(--mask-radius, 0px) - 140px),
+            rgba(0, 0, 0, 0.18) calc(var(--mask-radius, 0px) - 70px),
+            rgba(0, 0, 0, 0.04) calc(var(--mask-radius, 0px) - 20px),
+            transparent var(--mask-radius, 0px)
+          ) !important;
+        }
+      `
 
       // Colors for the soft gradient wave
       const { glowColor, accentColor } = getThemeGlowColors(targetTheme)
@@ -91,7 +141,7 @@ export function useCircularThemeTransition(
         key: Date.now(),
       })
 
-      const duration = 1860 // 50% slower, ultra-luxurious and silky smooth (was 1240ms)
+      const duration = 2790 // 50% slower, ultra-luxurious and silky smooth (was 1860ms)
 
       // Clean up wave overlay and CSS variables after animation duration
       setTimeout(() => {
@@ -100,7 +150,9 @@ export function useCircularThemeTransition(
         document.documentElement.style.removeProperty("--theme-x")
         document.documentElement.style.removeProperty("--theme-y")
         document.documentElement.style.removeProperty("--mask-radius")
-      }, duration + 160)
+        const tag = document.getElementById("theme-view-transition-coords")
+        if (tag) tag.remove()
+      }, duration + 200)
 
       isTransitioningRef.current = true
 
@@ -156,7 +208,7 @@ export function useCircularThemeTransition(
         // Fallback for browsers without View Transitions API
         setTimeout(() => {
           setTheme(targetTheme)
-        }, 850)
+        }, 1275)
       }
     },
     [currentTheme, setTheme]

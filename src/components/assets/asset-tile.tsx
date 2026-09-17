@@ -33,6 +33,7 @@ export interface PhotoItem {
   name: string
   url: string
   thumbnailUrl?: string
+  originalUrl?: string
   size: number
   type: string
   uploadedAt: string
@@ -601,7 +602,12 @@ export function AssetTile({ asset, onSelect }: AssetTileProps) {
         {/* Theme-adaptive image/preview area - clicking opens lightbox preview */}
         <div 
           onClick={handleImageClick}
-          className="w-full h-36 flex items-center justify-center p-4 relative overflow-hidden transition-colors cursor-pointer" style={{ backgroundColor: "#e7e8ea" }}
+          className={cn(
+            "w-full h-36 flex items-center justify-center relative overflow-hidden transition-colors cursor-pointer",
+            isLogoAsset 
+              ? "p-6 sm:p-7 bg-[#f0f2f5] dark:bg-white/5" 
+              : "p-4 bg-muted/10 dark:bg-black/20"
+          )}
         >
           {/* Approved Double Check Icon in Circle with Animated Green Hover Note */}
           <ApprovedStatusBadge zIndex="z-10" />
@@ -611,7 +617,12 @@ export function AssetTile({ asset, onSelect }: AssetTileProps) {
             <img 
               src={previewSrc} 
               alt={asset.name} 
-              className="max-h-full max-w-full object-scale-down transition-transform duration-300 ease-in-out group-hover:scale-105" 
+              className={cn(
+                "object-contain transition-transform duration-300 ease-in-out group-hover:scale-105 select-none",
+                isLogoAsset 
+                  ? "max-h-12 sm:max-h-13 max-w-[65%] w-auto mx-auto" 
+                  : "max-h-full max-w-full object-scale-down"
+              )} 
             />
           ) : (asset.category === "presentation" || asset.category?.toLowerCase().includes("presentation") || !!asset.formats.PPT) ? (
             <div className="flex flex-col items-center justify-center gap-2 group-hover:scale-110 transition-transform duration-300 select-none">
