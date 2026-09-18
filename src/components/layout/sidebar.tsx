@@ -93,7 +93,7 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
       {/* 1. Header / Logo Area */}
       <div className="relative flex h-14 lg:h-[60px] items-center border-b border-sidebar-border/70 px-3 overflow-hidden shrink-0">
         <Link
-          href="/"
+          href="/dashboard"
           onClick={() => {
             setIsHovered(false)
             onNavigate?.()
@@ -134,8 +134,8 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
           {navigationItems.map((item) => {
             const Icon = item.icon
             const isActive =
-              item.href === "/"
-                ? pathname === "/"
+              item.href === "/dashboard" || item.href === "/"
+                ? pathname === "/dashboard" || pathname === "/"
                 : pathname === item.href || pathname.startsWith(`${item.href}/`)
 
             return (

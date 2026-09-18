@@ -67,7 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 function setSessionCookie() {
   if (typeof document !== "undefined") {
-    document.cookie = "transvolt_session=1; path=/; max-age=604800; SameSite=Lax"
+    // Session cookie without max-age: expires when browser closes
+    document.cookie = "transvolt_session=1; path=/; SameSite=Lax"
   }
 }
 
@@ -82,7 +83,7 @@ function clearSessionCookie() {
     const hasSessionCookie = typeof document !== "undefined" && document.cookie.includes("transvolt_session=")
     const storedUser = hasSessionCookie ? localStorage.getItem("transvolt_user") : null
 
-    // If cookie was cleared or expired, remove stale localStorage session
+    // If session cookie is not present, clean up stored session
     if (!hasSessionCookie && typeof localStorage !== "undefined" && localStorage.getItem("transvolt_user")) {
       localStorage.removeItem("transvolt_user")
     }
@@ -113,10 +114,9 @@ function clearSessionCookie() {
 
   React.useEffect(() => {
     if (!isLoading) {
+      // If unauthenticated and on a protected route, redirect to /login
       if (!user && pathname !== "/login") {
         router.push("/login")
-      } else if (user && pathname === "/login") {
-        router.push("/")
       }
     }
   }, [user, isLoading, pathname, router])
@@ -142,9 +142,14 @@ function clearSessionCookie() {
     }
 
     // 1. Super Admin Authentication
-    if (isSuperAdminEmail(cleanEmail)) {
-      // Validate password
-      if (cleanPassword && !verifySuperAdminPassword(cleanPassword) && cleanPassword !== "••••••••••••") {
+    const isSuperAdminCandidate = isSuperAdminEmail(cleanEmail) || cleanEmail === "admin"
+    if (isSuperAdminCandidate) {
+      if (!cleanPassword) {
+        toast.error("Password is required for Super Admin login.")
+        return false
+      }
+
+      if (!verifySuperAdminPassword(cleanPassword)) {
         toast.error("Invalid password for Super Admin account.")
         return false
       }
@@ -162,7 +167,7 @@ function clearSessionCookie() {
       setSessionCookie()
       localStorage.setItem("transvolt_user", JSON.stringify(superAdminUser))
       toast.success(`Welcome back, ${superAdminUser.name}! Successfully authenticated as Super Admin.`)
-      router.push("/")
+      router.push("/dashboard")
       return true
     }
 
@@ -184,7 +189,7 @@ function clearSessionCookie() {
       setSessionCookie()
       localStorage.setItem("transvolt_user", JSON.stringify(inHouseUser))
       toast.success(`Welcome, ${formattedName}! Connected as In-House Team Member (@transvolt.in).`)
-      router.push("/")
+      router.push("/dashboard")
       return true
     }
 
@@ -201,7 +206,7 @@ function clearSessionCookie() {
     setSessionCookie()
     localStorage.setItem("transvolt_user", JSON.stringify(externalUser))
     toast.success(`Welcome, ${externalUser.name}! Connected as External Partner.`)
-    router.push("/")
+    router.push("/dashboard")
     return true
   }
 

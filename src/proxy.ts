@@ -17,10 +17,16 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 2. Check for active transvolt_session cookie
+  // 2. ROOT URL "/" ALWAYS opens/redirects to "/login" first
+  if (pathname === "/") {
+    const loginUrl = new URL("/login", request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // 3. For any other protected route, check for active transvolt_session cookie
   const sessionCookie = request.cookies.get("transvolt_session")?.value
 
-  // 3. If unauthenticated, immediately redirect to /login
+  // 4. If unauthenticated, immediately redirect to /login
   if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url)
     return NextResponse.redirect(loginUrl)

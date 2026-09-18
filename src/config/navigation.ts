@@ -19,7 +19,7 @@ import {
 export const navigationConfig = [
   {
     title: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {

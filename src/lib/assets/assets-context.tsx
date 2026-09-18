@@ -423,7 +423,7 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
 
   const getNavigationItems = (): NavigationItem[] => {
     const defaultNav = [
-      { title: "Dashboard", href: "/", icon: iconMap["dashboard"] || FileText },
+      { title: "Dashboard", href: "/dashboard", icon: iconMap["dashboard"] || FileText },
       { title: "Logo & Color", href: "/logo-color", icon: Palette },
       { title: "Typography", href: "/typography", icon: Type },
       { title: "Brand Philosophy", href: "/brand-philosophy", icon: Compass },
