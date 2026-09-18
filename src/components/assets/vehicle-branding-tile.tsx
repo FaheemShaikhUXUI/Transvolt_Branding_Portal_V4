@@ -58,6 +58,21 @@ export function VehicleBrandingTile({ variant, onDelete, onHoldToggle }: Vehicle
 
   const imageSrc = variant.thumbnail || variant.formats.JPG?.fileData
 
+  const activeFormats = React.useMemo(() => {
+    const list: ("JPG" | "PDF" | "CDR")[] = []
+    const supported = ["JPG", "PDF", "CDR"] as const
+    supported.forEach((fmt) => {
+      const item = variant.formats?.[fmt]
+      if (item && (item.fileData || item.fileName)) {
+        list.push(fmt)
+      }
+    })
+    if (list.length === 0 && (variant.thumbnail || variant.formats?.JPG)) {
+      list.push("JPG")
+    }
+    return list
+  }, [variant.formats, variant.thumbnail])
+
   const handleDownloadFormat = (type: "JPG" | "PDF" | "CDR") => {
     const file = variant.formats[type]
     if (!file?.fileData) {
@@ -303,21 +318,34 @@ export function VehicleBrandingTile({ variant, onDelete, onHoldToggle }: Vehicle
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-muted text-xs font-semibold">
                       <div className="flex items-center gap-2">
-                        <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>Replace File</span>
+                        <RefreshCw className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <div className="flex flex-col gap-0.5 text-left">
+                          <span>Replace File</span>
+                          <span className="text-[10px] text-muted-foreground font-normal">
+                            {activeFormats.length > 0
+                              ? `Active (${activeFormats.join(", ")})`
+                              : "No active formats"}
+                          </span>
+                        </div>
                       </div>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent className="w-48 p-1.5">
-                      {(["JPG", "PDF", "CDR"] as const).map((type) => (
-                        <DropdownMenuItem
-                          key={type}
-                          onClick={() => handleReplaceFile(type)}
-                          className="p-2 text-xs cursor-pointer flex items-center justify-between"
-                        >
-                          <span>Replace {type}</span>
-                          <FormatBadge format={type} />
-                        </DropdownMenuItem>
-                      ))}
+                      {activeFormats.length > 0 ? (
+                        activeFormats.map((type) => (
+                          <DropdownMenuItem
+                            key={type}
+                            onClick={() => handleReplaceFile(type)}
+                            className="p-2 text-xs cursor-pointer flex items-center justify-between"
+                          >
+                            <span>Replace {type}</span>
+                            <FormatBadge format={type} />
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-center text-xs text-muted-foreground select-none">
+                          No active formats to replace
+                        </div>
+                      )}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
 

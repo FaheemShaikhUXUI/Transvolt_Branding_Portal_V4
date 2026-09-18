@@ -84,6 +84,30 @@ interface AssetTileProps {
   onSelect: () => void
 }
 
+export const ALL_SUPPORTED_FORMATS = ["PNG", "JPG", "SVG", "PDF", "WORD", "CDR", "PPT"] as const
+export type SupportedFormat = typeof ALL_SUPPORTED_FORMATS[number]
+
+export function getActiveAssetFormats(asset: Asset): SupportedFormat[] {
+  const active: SupportedFormat[] = []
+  if (asset.formats) {
+    for (const fmt of ALL_SUPPORTED_FORMATS) {
+      const val = asset.formats[fmt] || (asset.formats as any)[fmt.toLowerCase()]
+      if (val && (val.fileName || val.fileData || Object.keys(val).length > 0)) {
+        active.push(fmt)
+      }
+    }
+  }
+  // Fallback: If formats object is empty but thumbnail exists, infer format from thumbnail
+  if (active.length === 0 && asset.thumbnail) {
+    const lower = asset.thumbnail.toLowerCase()
+    if (lower.includes(".svg")) active.push("SVG")
+    else if (lower.includes(".png")) active.push("PNG")
+    else if (lower.includes(".jpg") || lower.includes(".jpeg")) active.push("JPG")
+    else if (lower.includes(".pdf")) active.push("PDF")
+  }
+  return active
+}
+
 const MIME_MAP = {
   JPG:  "image/jpeg",
   PNG:  "image/png",
@@ -294,6 +318,7 @@ export function AssetTile({ asset, onSelect }: AssetTileProps) {
 
   const hasImage = !!previewSrc || (!!imageFormat?.fileData && imageFormat.fileData !== "mock-data" && imageFormat.fileData.length > 0)
   const isSuperAdmin = user?.role === "Super Admin"
+  const activeFormats = getActiveAssetFormats(asset)
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -377,37 +402,47 @@ export function AssetTile({ asset, onSelect }: AssetTileProps) {
                       >
                         <div className="flex flex-col gap-0.5 text-left">
                           <span className="font-semibold text-xs tracking-wide">Replace Asset</span>
-                          <span className="text-[10px] text-muted-foreground">Replace specific file formats</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {activeFormats.length > 0 
+                              ? `Replace active formats (${activeFormats.join(", ")})` 
+                              : "No active file formats"}
+                          </span>
                         </div>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="bg-card border border-border/80 p-2 rounded-xl shadow-2xl space-y-1 w-64">
-                        {(["PNG", "JPG", "SVG", "PDF", "WORD", "CDR", "PPT"] as const).map((type) => (
-                          <DropdownMenuItem
-                            key={type}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const input = document.createElement("input")
-                              input.type = "file"
-                              input.accept = type === 'PNG' ? '.png' : type === 'JPG' ? '.jpg,.jpeg' : type === 'SVG' ? '.svg' : type === 'PDF' ? '.pdf' : type === 'WORD' ? '.doc,.docx' : type === 'PPT' ? '.ppt,.pptx' : '.cdr'
-                              input.onchange = async (el) => {
-                                const file = (el.target as HTMLInputElement).files?.[0]
-                                if (file) {
-                                  await replaceAssetFormat(asset.id, type, file)
-                                  toast.success(`${type} variant replaced successfully.`)
+                        {activeFormats.length > 0 ? (
+                          activeFormats.map((type) => (
+                            <DropdownMenuItem
+                              key={type}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const input = document.createElement("input")
+                                input.type = "file"
+                                input.accept = type === 'PNG' ? '.png' : type === 'JPG' ? '.jpg,.jpeg' : type === 'SVG' ? '.svg' : type === 'PDF' ? '.pdf' : type === 'WORD' ? '.doc,.docx' : type === 'PPT' ? '.ppt,.pptx' : '.cdr'
+                                input.onchange = async (el) => {
+                                  const file = (el.target as HTMLInputElement).files?.[0]
+                                  if (file) {
+                                    await replaceAssetFormat(asset.id, type, file)
+                                    toast.success(`${type} variant replaced successfully.`)
+                                  }
                                 }
-                              }
-                              input.click()
-                            }}
-                            className="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-muted focus:bg-accent/10 focus:scale-[1.02] transition-all duration-200 select-none text-foreground w-full"
-                          >
-                            <FormatBadge format={type} />
-                            <div className="flex flex-col gap-0.5 text-left flex-1 min-w-0">
-                              <span className="font-semibold text-xs tracking-wide">Replace {type}</span>
-                              <span className="text-[10px] text-muted-foreground truncate">Upload new {type} format</span>
-                            </div>
-                            <RefreshCw className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          </DropdownMenuItem>
-                        ))}
+                                input.click()
+                              }}
+                              className="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-muted focus:bg-accent/10 focus:scale-[1.02] transition-all duration-200 select-none text-foreground w-full"
+                            >
+                              <FormatBadge format={type} />
+                              <div className="flex flex-col gap-0.5 text-left flex-1 min-w-0">
+                                <span className="font-semibold text-xs tracking-wide">Replace {type}</span>
+                                <span className="text-[10px] text-muted-foreground truncate">Upload new {type} format</span>
+                              </div>
+                              <RefreshCw className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </DropdownMenuItem>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-xs text-muted-foreground select-none">
+                            No active formats to replace
+                          </div>
+                        )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                     
@@ -776,37 +811,47 @@ export function AssetTile({ asset, onSelect }: AssetTileProps) {
                       >
                         <div className="flex flex-col gap-0.5 text-left">
                           <span className="font-semibold text-xs tracking-wide">Replace Asset</span>
-                          <span className="text-[10px] text-muted-foreground">Replace specific file formats</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {activeFormats.length > 0 
+                              ? `Replace active formats (${activeFormats.join(", ")})` 
+                              : "No active file formats"}
+                          </span>
                         </div>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="bg-card border border-border/80 p-2 rounded-xl shadow-2xl space-y-1 w-64">
-                        {(["PNG", "JPG", "SVG", "PDF", "WORD", "CDR", "PPT"] as const).map((type) => (
-                          <DropdownMenuItem
-                            key={type}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const input = document.createElement("input")
-                              input.type = "file"
-                              input.accept = type === 'PNG' ? '.png' : type === 'JPG' ? '.jpg,.jpeg' : type === 'SVG' ? '.svg' : type === 'PDF' ? '.pdf' : type === 'WORD' ? '.doc,.docx' : type === 'PPT' ? '.ppt,.pptx' : '.cdr'
-                              input.onchange = async (el) => {
-                                const file = (el.target as HTMLInputElement).files?.[0]
-                                if (file) {
-                                  await replaceAssetFormat(asset.id, type, file)
-                                  toast.success(`${type} variant replaced successfully.`)
+                        {activeFormats.length > 0 ? (
+                          activeFormats.map((type) => (
+                            <DropdownMenuItem
+                              key={type}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const input = document.createElement("input")
+                                input.type = "file"
+                                input.accept = type === 'PNG' ? '.png' : type === 'JPG' ? '.jpg,.jpeg' : type === 'SVG' ? '.svg' : type === 'PDF' ? '.pdf' : type === 'WORD' ? '.doc,.docx' : type === 'PPT' ? '.ppt,.pptx' : '.cdr'
+                                input.onchange = async (el) => {
+                                  const file = (el.target as HTMLInputElement).files?.[0]
+                                  if (file) {
+                                    await replaceAssetFormat(asset.id, type, file)
+                                    toast.success(`${type} variant replaced successfully.`)
+                                  }
                                 }
-                              }
-                              input.click()
-                            }}
-                            className="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-muted focus:bg-accent/10 focus:scale-[1.02] transition-all duration-200 select-none text-foreground w-full"
-                          >
-                            <FormatBadge format={type} />
-                            <div className="flex flex-col gap-0.5 text-left flex-1 min-w-0">
-                              <span className="font-semibold text-xs tracking-wide">Replace {type}</span>
-                              <span className="text-[10px] text-muted-foreground truncate">Upload new {type} format</span>
-                            </div>
-                            <RefreshCw className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          </DropdownMenuItem>
-                        ))}
+                                input.click()
+                              }}
+                              className="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-muted focus:bg-accent/10 focus:scale-[1.02] transition-all duration-200 select-none text-foreground w-full"
+                            >
+                              <FormatBadge format={type} />
+                              <div className="flex flex-col gap-0.5 text-left flex-1 min-w-0">
+                                <span className="font-semibold text-xs tracking-wide">Replace {type}</span>
+                                <span className="text-[10px] text-muted-foreground truncate">Upload new {type} format</span>
+                              </div>
+                              <RefreshCw className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </DropdownMenuItem>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-xs text-muted-foreground select-none">
+                            No active formats to replace
+                          </div>
+                        )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                     

@@ -854,3 +854,106 @@ body.presentation-deck-open [data-vehicle-runner="true"],
   background-size: 300% 100%;
   animation: autoplayColorCycle 4s ease-in-out infinite;
 }
+
+@keyframes placeTile {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-14px);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.02) translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-place-tile {
+  animation: placeTile 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.35);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 1.8s ease-in-out infinite;
+}
+
+/* True Tile Body Dust Disintegration */
+@keyframes tileBodyToDust {
+  0% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+    filter: contrast(100%) brightness(1);
+    clip-path: inset(0 0 0 0 round 12px);
+  }
+  20% {
+    opacity: 0.95;
+    transform: scale(0.99) translate(1px, -1px);
+    filter: contrast(120%) brightness(1.08) grayscale(25%);
+    clip-path: inset(0 12% 0 0 round 12px);
+  }
+  45% {
+    opacity: 0.75;
+    transform: scale(0.97) translate(3px, -3px);
+    filter: contrast(150%) brightness(1.2) grayscale(55%) blur(1px);
+    clip-path: inset(0 42% 0 0 round 12px);
+  }
+  70% {
+    opacity: 0.4;
+    transform: scale(0.94) translate(6px, -5px);
+    filter: contrast(180%) brightness(1.35) grayscale(85%) blur(2px);
+    clip-path: inset(0 75% 0 0 round 12px);
+  }
+  90% {
+    opacity: 0.12;
+    transform: scale(0.91) translate(9px, -7px);
+    filter: contrast(220%) brightness(1.5) grayscale(100%) blur(4px);
+    clip-path: inset(0 94% 0 0 round 12px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.88) translate(12px, -9px);
+    filter: contrast(250%) brightness(1.6) grayscale(100%) blur(6px);
+    clip-path: inset(0 100% 0 0 round 12px);
+  }
+}
+
+.animate-tile-body-dust {
+  animation: tileBodyToDust 1.15s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+  will-change: transform, opacity, filter, clip-path;
+  pointer-events: none;
+}
+
+@keyframes sandGrainBlow {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  40% {
+    opacity: 0.85;
+    transform: translate(calc(var(--grain-dx, 30px) * 0.4), calc(var(--grain-dy, -25px) * 0.4)) scale(1.15) rotate(45deg);
+  }
+  75% {
+    opacity: 0.4;
+    transform: translate(calc(var(--grain-dx, 30px) * 0.85), calc(var(--grain-dy, -25px) * 0.85)) scale(0.7) rotate(110deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--grain-dx, 30px), var(--grain-dy, -25px)) scale(0) rotate(180deg);
+  }
+}
+
+.animate-sand-grain {
+  animation: sandGrainBlow var(--grain-duration, 1.2s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}

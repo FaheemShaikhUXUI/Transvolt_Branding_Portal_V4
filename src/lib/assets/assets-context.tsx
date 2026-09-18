@@ -633,11 +633,10 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
   }
 
   const replaceAssetFormat = async (id: string, type: string, file: File) => {
-    let fileData = "mock-data"
+    let fileData = await fileToDataURL(file)
     let thumbnailUpdate = {}
     if (type === "PNG" || type === "JPG" || type === "SVG") {
       thumbnailUpdate = { thumbnail: await createThumbnail(file) }
-      fileData = await fileToDataURL(file)
     }
 
     const updated = assets.map((a) => {
@@ -652,10 +651,26 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
             fileData: fileData
           }
         }
+        let updatedVariants = a.variants
+        if (updatedVariants && updatedVariants.length > 0) {
+          updatedVariants = updatedVariants.map((v, i) => {
+            if (i === 0) {
+              return {
+                ...v,
+                formats: {
+                  ...v.formats,
+                  [type]: { fileName: file.name, fileData }
+                }
+              }
+            }
+            return v
+          })
+        }
         return {
           ...a,
           ...thumbnailUpdate,
           formats: newFormats,
+          variants: updatedVariants,
           updatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
         }
       }

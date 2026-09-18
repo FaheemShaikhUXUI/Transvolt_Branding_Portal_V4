@@ -13,6 +13,7 @@ import {
   Compass,
   Network,
   Layers,
+  FolderTree,
 } from "lucide-react"
 
 export const navigationConfig = [
@@ -35,6 +36,11 @@ export const navigationConfig = [
     title: "Graphics Library",
     href: "/graphics-library",
     icon: Layers,
+  },
+  {
+    title: "Graphics Library V2",
+    href: "/graphics-library-v2",
+    icon: FolderTree,
   },
   {
     title: "Letterhead",

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BrandLogo } from "./brand-logo"
 import { BrandBookTile } from "./brand-book-tile"
+import { AboutPortalButton } from "./about-portal-button"
 import { cn } from "@/lib/utils"
 import { navigationConfig } from "@/config/navigation"
 
@@ -132,7 +133,10 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
         <nav className="flex flex-col gap-1 px-2.5">
           {navigationItems.map((item) => {
             const Icon = item.icon
-            const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`)
 
             return (
               <Link
@@ -201,6 +205,9 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
           })}
         </nav>
       </div>
+
+      {/* 2.5 About This Portal Button (Above Brand Book) */}
+      <AboutPortalButton isCollapsed={!isOpen} />
 
       {/* 3. Brand Book Tile at Bottom */}
       <BrandBookTile isCollapsed={!isOpen} />

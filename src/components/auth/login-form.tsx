@@ -10,6 +10,7 @@ import { Mail, Lock, Eye, EyeOff, KeyRound, Sparkles, ArrowRight, Play } from "l
 import { toast } from "sonner"
 import { RequestAccessModal } from "./request-access-modal"
 import { InteractivePresentationDeck } from "@/components/presentation/interactive-presentation-deck"
+import { PresentationTransition } from "@/components/presentation/presentation-transition"
 
 function AnimatedWaveBackground() {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
@@ -285,6 +286,22 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = React.useState(true)
   const [isRequestAccessOpen, setIsRequestAccessOpen] = React.useState(false)
   const [isPresentationOpen, setIsPresentationOpen] = React.useState(false)
+  const [isTransitioning, setIsTransitioning] = React.useState(false)
+
+  const handleLaunchPresentation = () => {
+    if (isTransitioning || isPresentationOpen) return
+    setIsTransitioning(true)
+
+    // 50% slower, smooth cinematic transition: allow user to enjoy the unfolding stage & slide reveal
+    setTimeout(() => {
+      setIsPresentationOpen(true)
+    }, 1650)
+
+    // Clean up transition overlay once deck is fully active
+    setTimeout(() => {
+      setIsTransitioning(false)
+    }, 2250)
+  }
 
   // Load configured credentials if custom
   React.useEffect(() => {
@@ -426,7 +443,7 @@ export function LoginForm() {
             <button
               type="button"
               id="login-watch-presentation-btn"
-              onClick={() => setIsPresentationOpen(true)}
+              onClick={handleLaunchPresentation}
               className="group w-full flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-500/60 p-3.5 sm:p-4 transition-all duration-200 cursor-pointer shadow-md shadow-blue-500/10 active:scale-[0.99] text-left"
             >
               {/* Left Play Icon in single color */}
@@ -765,10 +782,16 @@ export function LoginForm() {
           onClose={() => setIsRequestAccessOpen(false)}
         />
 
+        {/* Cinematic Stage Expand Transition (50% Slower) */}
+        <PresentationTransition isTransitioning={isTransitioning} />
+
         {/* Interactive Full Presentation Deck */}
         <InteractivePresentationDeck
           isOpen={isPresentationOpen}
-          onClose={() => setIsPresentationOpen(false)}
+          onClose={() => {
+            setIsPresentationOpen(false)
+            setIsTransitioning(false)
+          }}
           onRequestAccess={() => setIsRequestAccessOpen(true)}
         />
 

@@ -495,9 +495,12 @@ export function InteractivePresentationDeck({
     setMounted(true)
   }, [])
 
-  // Strictly eliminate and suppress running vehicle SVG while presentation is open
+  // Strictly eliminate and suppress running vehicle SVG while presentation is open & reset to first slide
   React.useEffect(() => {
     if (isOpen) {
+      setCurrentSlide(0)
+      setIsPlaying(true)
+      setIsPaused(false)
       document.body.classList.add("presentation-deck-open")
       window.dispatchEvent(new Event("presentation-deck-toggle"))
       return () => {
