@@ -119,7 +119,7 @@ export function Header() {
           <TooltipContent>{user?.email} ({isSuperAdmin ? "Super Admin" : "In-House Person"})</TooltipContent>
         </Tooltip>
 
-        {/* Shinchan Action Button to View Shinchan Animation */}
+        {/* Shinchan Button to View Shinchan Animation */}
         <Tooltip>
           <TooltipTrigger
             onClick={(e) => {
@@ -129,7 +129,7 @@ export function Header() {
             render={
               <button
                 type="button"
-                className="relative h-9.5 w-8 p-0 transition-transform duration-200 hover:scale-115 active:scale-90 cursor-pointer flex items-center justify-center group shrink-0 bg-transparent border-none outline-none focus:outline-none"
+                className="relative h-8.5 w-8.5 p-0 transition-transform duration-200 hover:scale-115 active:scale-90 cursor-pointer flex items-center justify-center group shrink-0 bg-transparent border-none outline-none focus:outline-none"
                 onClick={(e) => {
                   e.stopPropagation()
                   window.dispatchEvent(new CustomEvent("trigger-shinchan-screensaver"))
@@ -139,9 +139,9 @@ export function Header() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/shinchan-action.png"
+              src="/shinchan-face.png"
               alt="Shinchan Animation"
-              className="h-full w-auto object-contain filter drop-shadow-xs group-hover:-rotate-6 transition-transform select-none pointer-events-none"
+              className="w-full h-full object-contain filter drop-shadow-xs group-hover:rotate-6 transition-transform select-none pointer-events-none"
               draggable={false}
             />
             <span className="sr-only">Shinchan Animation</span>
