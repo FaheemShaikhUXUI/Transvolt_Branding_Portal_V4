@@ -1329,18 +1329,18 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 12: GRAPHICS LIBRARY (OPTION 1 STYLE)
+    // SLIDE 12: GRAPHICS DRIVE (OPTION 1 STYLE)
     // -------------------------------------------------------------
     {
       id: 12,
-      category: "12 — Graphics Library",
-      title: "Graphics & Creative Library",
-      subtitle: "A Central Home for Supporting Creatives & Reusable Assets.",
+      category: "12 — Graphics Drive",
+      title: "Graphics Drive",
+      subtitle: "A Central Home for Supporting Creatives & Reusable Drive Assets.",
       render: () => (
         <SlideLayoutOption1
-          title="Graphics & Creative Library"
-          headline="A Central Home for Supporting Graphics"
-          paragraph="Flexible asset repository for reusable festive greetings, HR creatives, event passes, and special occasion graphics organized by category and accessible to all approved staff."
+          title="Graphics Drive"
+          headline="A Central Home for Graphics & Drive Files"
+          paragraph="Hierarchical Google Drive & Windows Explorer style asset repository with infinite nested folders, multi-format previews, and fast creative access for all approved staff."
           bullets={[
             "Festival greetings (Diwali, Eid, Christmas, Independence Day)",
             "Official corporate event passes and visitor badge templates",

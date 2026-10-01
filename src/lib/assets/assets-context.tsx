@@ -11,9 +11,9 @@ import {
   getAllAssetsFromDB,
 } from "./photo-vault"
 import { getInitialSitePhotoAssets } from "./site-photos-seed"
+import { DEFAULT_LOGO_CATEGORIES, DEFAULT_LOGO_ASSETS } from "./logo-seed"
 import { getInitialEmployeePhotoAssets } from "./employee-photos-seed"
-import { getInitialLogoAssets } from "./logo-seed"
-import { Palette, FileText, MonitorPlay, Monitor, Printer, IdCard, Car, Zap, Image as ImageIcon, LucideIcon, Type, Compass } from "lucide-react"
+import { Palette, FileText, MonitorPlay, Monitor, Printer, IdCard, Car, Zap, Image as ImageIcon, LucideIcon, Type, Compass, Sparkles } from "lucide-react"
 
 const iconMap: Record<string, LucideIcon> = {
   "logo-color": Palette,
@@ -26,6 +26,7 @@ const iconMap: Record<string, LucideIcon> = {
   "id-business-cards": IdCard,
   "vehicle-branding": Car,
   "charger-branding": Zap,
+  "eva-design-tool": Sparkles,
   "photos": ImageIcon,
 }
 
@@ -194,9 +195,50 @@ const createThumbnail = async (file: File, isEventOrSite: boolean = false): Prom
   }
 }
 
+const getInitialCustomCategoriesSync = (): Record<string, AssetPageConfig> => {
+  let categories: Record<string, AssetPageConfig> = { ...DEFAULT_LOGO_CATEGORIES }
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("branding_portal_custom_categories")
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed && typeof parsed === "object") {
+          categories = { ...categories, ...parsed }
+        }
+      }
+    } catch {}
+  }
+  return categories
+}
+
+const getInitialAssetsSync = (): Asset[] => {
+  let initialAssets: Asset[] = [...DEFAULT_LOGO_ASSETS]
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("branding_portal_assets")
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasBasic = parsed.some((a: any) => a.category === "basic-logo")
+          const hasTagline = parsed.some((a: any) => a.category === "logo-with-tag-line")
+          let list = [...parsed]
+          if (!hasBasic) {
+            list = [...DEFAULT_LOGO_ASSETS.filter((a) => a.category === "basic-logo"), ...list]
+          }
+          if (!hasTagline) {
+            list = [...DEFAULT_LOGO_ASSETS.filter((a) => a.category === "logo-with-tag-line"), ...list]
+          }
+          return list
+        }
+      }
+    } catch {}
+  }
+  return initialAssets
+}
+
 export function AssetsProvider({ children }: { children: React.ReactNode }) {
-  const [assets, setAssets] = React.useState<Asset[]>([])
-  const [customCategories, setCustomCategories] = React.useState<Record<string, AssetPageConfig>>({})
+  const [assets, setAssets] = React.useState<Asset[]>(getInitialAssetsSync)
+  const [customCategories, setCustomCategories] = React.useState<Record<string, AssetPageConfig>>(getInitialCustomCategoriesSync)
 
   React.useEffect(() => {
     async function initializeAssets() {
@@ -258,11 +300,40 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
           finalAssets = Object.values(grouped)
         }
 
-        // Ensure default Logo, Site and Employee seed assets exist
-        const logoAssets = finalAssets.filter((a) => a.category === "logo-color")
-        if (logoAssets.length < 6) {
-          const nonLogoAssets = finalAssets.filter((a) => a.category !== "logo-color")
-          finalAssets = [...getInitialLogoAssets(), ...nonLogoAssets]
+        // Ensure default Basic Logo and Logo With Tag Line seed assets are always present
+        const hasBasic = finalAssets.some((a) => a.category === "basic-logo")
+        if (!hasBasic) {
+          finalAssets = [...DEFAULT_LOGO_ASSETS.filter((a) => a.category === "basic-logo"), ...finalAssets]
+        }
+        const hasTagline = finalAssets.some((a) => a.category === "logo-with-tag-line")
+        if (!hasTagline) {
+          finalAssets = [...DEFAULT_LOGO_ASSETS.filter((a) => a.category === "logo-with-tag-line"), ...finalAssets]
+        }
+
+        // Purge old unified single hardcoded logo-color group assets if lingering
+        const oldHardcodedLogoIds = new Set([
+          "logo-black",
+          "logo-white",
+          "logo-full-white",
+          "logo-black-tagline",
+          "logo-white-tagline",
+          "logo-full-white-tagline",
+        ])
+        finalAssets = finalAssets.filter((a) => !(oldHardcodedLogoIds.has(a.id) && a.category === "logo-color"))
+
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("branding_portal_assets")
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored)
+              if (Array.isArray(parsed)) {
+                localStorage.setItem(
+                  "branding_portal_assets",
+                  JSON.stringify(parsed.filter((a: any) => !(oldHardcodedLogoIds.has(a.id) && a.category === "logo-color")))
+                )
+              }
+            } catch {}
+          }
         }
 
         const hasSite = finalAssets.some((a) => a.category === "photos" && a.subCategory === "Site")
@@ -330,24 +401,31 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
     initializeAssets()
 
     const storedCats = localStorage.getItem("branding_portal_custom_categories")
+    let mergedCats: Record<string, AssetPageConfig> = { ...DEFAULT_LOGO_CATEGORIES }
     if (storedCats) {
       try {
         const parsed = JSON.parse(storedCats)
-        let changed = false
-        Object.keys(parsed).forEach((key) => {
-          if (!parsed[key].parentSlug) {
-            parsed[key].parentSlug = "logo-color"
-            changed = true
+        if (parsed && typeof parsed === "object") {
+          let changed = false
+          Object.keys(parsed).forEach((key) => {
+            if (!parsed[key].parentSlug) {
+              parsed[key].parentSlug = "logo-color"
+              changed = true
+            }
+          })
+          mergedCats = { ...mergedCats, ...parsed }
+          if (changed) {
+            localStorage.setItem("branding_portal_custom_categories", JSON.stringify(mergedCats))
           }
-        })
-        setCustomCategories(parsed)
-        if (changed) {
-          localStorage.setItem("branding_portal_custom_categories", JSON.stringify(parsed))
         }
       } catch (e) {
         console.error("Failed to parse custom categories", e)
       }
     }
+    setCustomCategories(mergedCats)
+    try {
+      localStorage.setItem("branding_portal_custom_categories", JSON.stringify(mergedCats))
+    } catch {}
   }, [])
 
   const saveAssetsToStorage = (newAssets: Asset[]) => {
@@ -434,6 +512,7 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
       { title: "ID Cards & Business Cards", href: "/id-business-cards", icon: IdCard },
       { title: "Vehicle Branding", href: "/vehicle-branding", icon: Car },
       { title: "Charger Branding", href: "/charger-branding", icon: Zap },
+      { title: "Eva Design Tool", href: "/eva-design-tool", icon: Sparkles },
       { title: "Photos and Videos Repository", href: "/photos", icon: ImageIcon },
     ]
 

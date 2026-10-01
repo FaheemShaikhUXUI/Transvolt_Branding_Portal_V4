@@ -77,6 +77,13 @@ export const assetPagesConfig: Record<string, AssetPageConfig> = {
     emptyStateTitle: "No charger branding found",
     emptyStateDescription: "Add EV charger branding assets.",
   },
+  "eva-design-tool": {
+    slug: "eva-design-tool",
+    title: "Eva Design Tool",
+    description: "Interactive EV Livery Studio, vehicle branding visualizer, and custom livery generator for Transvolt electric fleets.",
+    emptyStateTitle: "Eva Design Studio",
+    emptyStateDescription: "Create and export custom EV vehicle liveries.",
+  },
   "photos": {
     slug: "photos",
     title: "Photos and Videos Repository",

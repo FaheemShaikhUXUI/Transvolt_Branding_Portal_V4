@@ -124,6 +124,20 @@ html {
   background: rgba(255, 255, 255, 0.5);
 }
 
+/* ==========================================================================
+   No Scrollbar Utility (Hides scrollbar completely without breaking scroll)
+   ========================================================================== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 .dark {
   --background: oklch(0 0 0);
   --foreground: oklch(0.985 0 0);
@@ -957,3 +971,56 @@ body.presentation-deck-open [data-vehicle-runner="true"],
   animation: sandGrainBlow var(--grain-duration, 1.2s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
+
+/* ─── Eva Bot Neon Color Morphing (Neon Blue <-> Neon Green) ─────── */
+@keyframes neonBotShift {
+  0%, 100% {
+    color: #00d4ff;
+    border-color: rgba(0, 212, 255, 0.7);
+    background-color: rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.45), inset 0 0 6px rgba(0, 212, 255, 0.2);
+  }
+  25% {
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.8);
+    background-color: rgba(0, 240, 255, 0.12);
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.5), inset 0 0 8px rgba(0, 240, 255, 0.25);
+  }
+  50% {
+    color: #10f080;
+    border-color: rgba(16, 240, 128, 0.8);
+    background-color: rgba(16, 240, 128, 0.1);
+    box-shadow: 0 0 14px rgba(16, 240, 128, 0.5), inset 0 0 8px rgba(16, 240, 128, 0.25);
+  }
+  75% {
+    color: #00e5a3;
+    border-color: rgba(0, 229, 163, 0.75);
+    background-color: rgba(0, 229, 163, 0.1);
+    box-shadow: 0 0 12px rgba(0, 229, 163, 0.45), inset 0 0 6px rgba(0, 229, 163, 0.2);
+  }
+}
+
+.animate-neon-bot {
+  animation: neonBotShift 6s ease-in-out infinite;
+}
+
+.animate-neon-bot:hover {
+  filter: brightness(1.2);
+}
+
+/* Talking Cat Mascot Entrance Animation (Slides in from right side starting at 0% opacity) */
+@keyframes catSlideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(42px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-cat-slide-in {
+  animation: catSlideInFromRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}

@@ -22,7 +22,7 @@ import {
   IdCard,
   Zap,
   Image as ImageIcon,
-  Layers,
+  FolderTree,
   Play,
 } from "lucide-react"
 import { InteractivePresentationDeck } from "@/components/presentation/interactive-presentation-deck"
@@ -39,7 +39,7 @@ const PAGE_ICON_MAP: Record<string, React.ElementType> = {
   "vehicle-branding": Car,
   "charger-branding": Zap,
   "photos": ImageIcon,
-  "graphics-library": Layers,
+  "graphics-drive": FolderTree,
 }
 
 import { Input } from "@/components/ui/input"

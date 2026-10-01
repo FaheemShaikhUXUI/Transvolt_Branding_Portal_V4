@@ -234,11 +234,11 @@ export function SavedPromptsNotesView() {
       <div className="border-b border-border/80 bg-card/60 backdrop-blur-md px-4 sm:px-6 py-3 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
           <Link
-            href="/graphics-library-v2"
+            href="/graphics-drive"
             className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted px-2.5 py-1.5 rounded-xl border border-border/60 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Graphics Library V2</span>
+            <span>Graphics Drive</span>
           </Link>
           <span className="text-muted-foreground/40 text-sm">/</span>
           <div className="flex items-center gap-2">
@@ -264,7 +264,7 @@ export function SavedPromptsNotesView() {
             <span>New Prompt / Note</span>
           </Button>
 
-          <Link href="/graphics-library-v2">
+          <Link href="/graphics-drive">
             <Button
               variant="outline"
               size="sm"

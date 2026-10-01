@@ -12,8 +12,9 @@ import {
   Type,
   Compass,
   Network,
-  Layers,
   FolderTree,
+  Sparkles,
+  Music2,
 } from "lucide-react"
 
 export const navigationConfig = [
@@ -33,13 +34,8 @@ export const navigationConfig = [
     icon: Type,
   },
   {
-    title: "Graphics Library",
-    href: "/graphics-library",
-    icon: Layers,
-  },
-  {
-    title: "Graphics Library V2",
-    href: "/graphics-library-v2",
+    title: "Graphics Drive",
+    href: "/graphics-drive",
     icon: FolderTree,
   },
   {
@@ -81,6 +77,16 @@ export const navigationConfig = [
     title: "Charger Branding",
     href: "/charger-branding",
     icon: Zap,
+  },
+  {
+    title: "Eva Design Tool",
+    href: "/eva-design-tool",
+    icon: Sparkles,
+  },
+  {
+    title: "Generate Audio",
+    href: "/generate-audio",
+    icon: Music2,
   },
   {
     title: "Organization Chart",

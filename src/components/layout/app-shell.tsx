@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { Header } from "./header"
 import { SidebarProvider } from "./sidebar-context"
@@ -10,6 +11,18 @@ interface AppShellProps {
 }
 
 function AppShellContent({ children }: AppShellProps) {
+  const pathname = usePathname()
+  const isEvaTool = pathname === "/eva-design-tool" || pathname?.startsWith("/eva-design-tool")
+
+  // For Eva Design Tool, remove portal's left sidebar, top header, and margins completely
+  if (isEvaTool) {
+    return (
+      <main className="h-screen w-screen overflow-hidden bg-background">
+        {children}
+      </main>
+    )
+  }
+
   return (
     <div className="min-h-screen w-full md:grid md:grid-cols-[68px_1fr]">
       {/* Desktop Sidebar: Occupies fixed 68px slot; expands above page on hover with zero page shaking */}
