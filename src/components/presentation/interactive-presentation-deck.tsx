@@ -45,7 +45,10 @@ import {
   Eye,
   Mail,
   Sun,
-  Moon
+  Moon,
+  Music2,
+  Building2,
+  FolderTree
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -55,6 +58,7 @@ interface InteractivePresentationDeckProps {
   isOpen: boolean
   onClose: () => void
   onRequestAccess?: () => void
+  initialSlide?: number
 }
 
 interface SlideData {
@@ -475,7 +479,8 @@ const SPEED_CONFIGS = [
 export function InteractivePresentationDeck({
   isOpen,
   onClose,
-  onRequestAccess
+  onRequestAccess,
+  initialSlide = 0
 }: InteractivePresentationDeckProps) {
   const [theme, setTheme] = React.useState<PresentationTheme>("black")
   const [currentSlide, setCurrentSlide] = React.useState(0)
@@ -495,11 +500,12 @@ export function InteractivePresentationDeck({
     setMounted(true)
   }, [])
 
-  // Strictly eliminate and suppress running vehicle SVG while presentation is open & reset to first slide
+  // Strictly eliminate and suppress running vehicle SVG while presentation is open & reset to first slide or requested slide
   React.useEffect(() => {
     if (isOpen) {
-      setCurrentSlide(0)
-      setIsPlaying(true)
+      const targetSlide = typeof initialSlide === "number" && initialSlide >= 0 ? initialSlide : 0
+      setCurrentSlide(targetSlide)
+      setIsPlaying(targetSlide === 0)
       setIsPaused(false)
       document.body.classList.add("presentation-deck-open")
       window.dispatchEvent(new Event("presentation-deck-toggle"))
@@ -508,7 +514,7 @@ export function InteractivePresentationDeck({
         window.dispatchEvent(new Event("presentation-deck-toggle"))
       }
     }
-  }, [isOpen])
+  }, [isOpen, initialSlide])
 
   const isWhite = theme === "white"
 
@@ -779,9 +785,9 @@ export function InteractivePresentationDeck({
           headline="Brand Management at a Glance"
           paragraph="The Dashboard gives team members and leadership an executive birds-eye overview of the brand ecosystem, highlighting recently updated assets, pending approvals, and high-frequency quick links."
           bullets={[
-            "Global instant search across all 11+ brand categories",
+            "Global instant search across all 16+ brand modules & creative studios",
             "Real-time notifications for updates, requests, and approvals",
-            "Quick-access shortcuts to frequently downloaded files",
+            "Quick-access shortcuts to frequently downloaded files and studio tools",
             "Clear lifecycle indicators (Active, Hold, Draft, Reviewed)",
             "Live repository metrics tracking total assets and downloads"
           ]}
@@ -805,8 +811,8 @@ export function InteractivePresentationDeck({
               color: "blue"
             },
             {
-              title: "Multi-Category Matrix",
-              desc: "Direct navigation to Letterhead, Vehicles, Typography, and Identity.",
+              title: "16+ Module Matrix",
+              desc: "Direct navigation to Eva Design Tool, Audio Studio, Company Master & Fleet.",
               icon: <Grid className="h-5 w-5" />,
               color: "purple"
             },
@@ -1027,14 +1033,14 @@ export function InteractivePresentationDeck({
         <SlideLayoutOption2
           title="Multi-Firm Letterheads"
           headline="Solving Multi-Company Letterhead Management"
-          paragraph="Transvolt operates through multiple legal corporate entities, operating companies, and regional SPVs. The portal provides instant access to verified letterheads with accurate CIN, registered addresses, and GST details."
+          paragraph="Transvolt operates through multiple legal corporate entities, operating companies, and regional SPVs. The portal provides instant access to verified letterheads auto-synchronized with Company Master data."
           bullets={[
-            "Dedicated official letterheads for each legal corporate entity",
-            "Verified Corporate Identification Numbers (CIN) & GSTINs",
-            "Official registered office addresses updated and verified",
-            "Standardized Word (.docx) documents and high-res image headers",
-            "Prevents outdated address info on tenders, bank notices & contracts",
-            "Eliminates repeated requests to the Legal & Secretarial team"
+            "Dedicated official letterheads for each legal corporate entity & regional SPV",
+            "Direct auto-synchronization with Company Master legal directory",
+            "Verified Corporate Identification Numbers (CIN) & GSTIN certificates",
+            "Standardized Word (.docx) documents with protected margins & headers",
+            "High-resolution vector PDF packs calibrated for commercial printing",
+            "Eliminates billing rejections, outdated addresses & legal discrepancies"
           ]}
           tiles={[
             {
@@ -1050,13 +1056,13 @@ export function InteractivePresentationDeck({
               color: "cyan"
             },
             {
-              title: "Verified Legal Details",
-              desc: "Registered office, corporate CIN, email, website, and GST credentials.",
+              title: "Company Master Sync",
+              desc: "Registered office, corporate CIN, email, website, and GST credentials auto-synced.",
               icon: <ShieldCheck className="h-5 w-5" />,
               color: "blue"
             },
             {
-              title: "Header & Footer JPGs",
+              title: "Header & Footer Assets",
               desc: "Crisp high-resolution images ready for digital insertion into letters.",
               icon: <ImageIcon className="h-5 w-5" />,
               color: "purple"
@@ -1089,15 +1095,15 @@ export function InteractivePresentationDeck({
       render: () => (
         <SlideLayoutOption1
           title="ID & Business Cards"
-          headline="Employee Records + Automated Identity Generation"
-          paragraph="Maintains full employee records site-by-site across regional depots and Head Office. Eliminates manual graphic design work by generating approved ID Cards and Business Cards directly from verified portal data."
+          headline="Site Employee Directory + Live Dual-Sided Card Customizer"
+          paragraph="Maintains full employee records site-by-site across regional depots and Head Office. Eliminates manual graphic design work with live webcam photo uploads, dual-sided previews, and print-ready vector PDFs."
           bullets={[
-            "Site-wise employee rosters with designation & employee IDs",
-            "Front & back automated ID card generator with official barcodes",
-            "High-resolution Business Cards with QR contact codes",
-            "Emergency blood group and depot contact integration",
-            "Direct print-ready PDF export calibrated for card printers",
-            "Controlled 6-hour printer sharing links for regional vendors"
+            "Site-wise employee rosters covering Mumbai, Pune, Ahmedabad & Head Office",
+            "New Employee Photo Upload modal with webcam capture & drag-and-drop crop",
+            "Live Front & Back PVC card customizer with dynamic QR contact codes",
+            "Turnstile-compatible barcode generation and emergency contact integration",
+            "Print-ready vector PDF export with 3mm bleeds and crop marks for card printers",
+            "Controlled 6-hour printer sharing links for regional production vendors"
           ]}
           tiles={[
             {
@@ -1107,26 +1113,26 @@ export function InteractivePresentationDeck({
               color: "emerald"
             },
             {
-              title: "Instant ID Generator",
-              desc: "One-click generation of official Front and Back PVC ID card layouts.",
-              icon: <IdCard className="h-5 w-5" />,
+              title: "Live Photo Capture & Crop",
+              desc: "Built-in webcam capture and drag & drop crop for perfect portrait alignment.",
+              icon: <ImageIcon className="h-5 w-5" />,
               color: "cyan"
             },
             {
-              title: "Executive Business Cards",
-              desc: "Professional business cards with dynamic QR codes for vCard contact sharing.",
+              title: "Dual-Sided Card Visualizer",
+              desc: "Real-time Front and Back PVC card layout rendering with dynamic QR vCards.",
               icon: <IdCard className="h-5 w-5" />,
               color: "blue"
             },
             {
-              title: "Barcode & Security Codes",
-              desc: "Standardized employee code encoding compatible with depot turnstiles.",
+              title: "Turnstile Barcode Suite",
+              desc: "Standardized employee code encoding compatible with depot security turnstiles.",
               icon: <ShieldCheck className="h-5 w-5" />,
               color: "purple"
             },
             {
               title: "Print-Ready PDF Output",
-              desc: "Standard 85.6mm x 54mm card proportions with 3mm bleed margins.",
+              desc: "Standard 85.6mm x 54mm card proportions with 3mm bleed margins & crop marks.",
               icon: <FileText className="h-5 w-5" />,
               color: "amber"
             },
@@ -1152,49 +1158,50 @@ export function InteractivePresentationDeck({
       render: () => (
         <SlideLayoutOption2
           title="Presentation Deck System"
-          headline="Ready-to-Use Corporate Presentation System"
-          paragraph="Standardized 16:9 master PowerPoint templates and slide layouts built for widescreen displays, board presentations, investor meetings, client pitches, and operational briefings."
+          headline="Interactive Web Presentation Player & 16:9 Master Decks"
+          paragraph="Comprehensive corporate presentation ecosystem featuring an interactive 28-slide web presentation deck with auto-play & speed duration control, alongside standardized 16:9 editable PowerPoint (.pptx) master slide templates."
           bullets={[
-            "Modern 16:9 widescreen layout standard optimized for laptop screens",
-            "Pre-formatted master slide layouts, title dividers, and agenda decks",
-            "Pre-configured Poppins font styles and high-contrast color palettes",
-            "Standardized charts, milestone timelines, metrics, and team rosters",
-            "Instant download in native editable PowerPoint (.pptx) format"
+            "Built-in 28-slide interactive web presentation player with fullscreen & auto-play",
+            "Dynamic playback speed slider (x0.5 to x2.0) with spacebar pause & release",
+            "Light & dark high-contrast presentation viewing modes with chapter drawer",
+            "Standardized 16:9 widescreen PowerPoint master templates (.pptx) ready to download",
+            "Pre-configured Poppins font hierarchy, financial cards, and milestone roadmaps",
+            "Guaranteed brand uniformity before board members, ministries, and investors"
           ]}
           tiles={[
             {
-              title: "16:9 Master Template",
-              desc: "Widescreen proportions calibrated for modern monitors and projectors.",
-              icon: <Laptop className="h-5 w-5" />,
+              title: "28-Slide Web Deck",
+              desc: "Browser-based interactive presentation with smooth step-reveal animations.",
+              icon: <Play className="h-5 w-5" />,
               color: "emerald"
             },
             {
-              title: "Milestone Roadmaps",
-              desc: "Pre-designed timeline slides to showcase project rollouts and phases.",
+              title: "Auto-Play & Speed Control",
+              desc: "Hands-free continuous playback with 11 custom duration speed intervals.",
               icon: <Sliders className="h-5 w-5" />,
               color: "cyan"
             },
             {
-              title: "KPI & Metrics Grids",
-              desc: "Data presentation cards to highlight fleet mileage, uptime, and energy stats.",
-              icon: <BarChart3 className="h-5 w-5" />,
+              title: "16:9 Master Template",
+              desc: "Widescreen PowerPoint templates calibrated for modern laptops and projectors.",
+              icon: <Laptop className="h-5 w-5" />,
               color: "blue"
             },
             {
-              title: "Team & Leadership Slides",
-              desc: "Consistent team roster layouts with designation tags and photo slots.",
-              icon: <Users className="h-5 w-5" />,
+              title: "KPI & Metrics Grids",
+              desc: "Pre-designed data presentation cards for fleet uptime, mileage, and financials.",
+              icon: <BarChart3 className="h-5 w-5" />,
               color: "purple"
             },
             {
               title: "Pre-Configured Typography",
-              desc: "Built-in Poppins headings and clean contrast palettes in master styles.",
+              desc: "Built-in Poppins typography hierarchy and brand-approved color contrasts.",
               icon: <Type className="h-5 w-5" />,
               color: "amber"
             },
             {
               title: "1-Click PPTX Export",
-              desc: "Download the complete official template to assemble executive presentations.",
+              desc: "Download editable PowerPoint decks for investor pitches and operational reviews.",
               icon: <Download className="h-5 w-5" />,
               color: "rose"
             }
@@ -1339,51 +1346,51 @@ export function InteractivePresentationDeck({
       render: () => (
         <SlideLayoutOption1
           title="Graphics Drive"
-          headline="A Central Home for Graphics & Drive Files"
-          paragraph="Hierarchical Google Drive & Windows Explorer style asset repository with infinite nested folders, multi-format previews, and fast creative access for all approved staff."
+          headline="Hierarchical Cloud Drive & Multi-Format Creative Vault"
+          paragraph="Centralized cloud asset file system engineered with an intuitive nested folder tree, instant multi-format file lightbox preview, and high-speed batch ZIP downloads for marketing and operations teams."
           bullets={[
-            "Festival greetings (Diwali, Eid, Christmas, Independence Day)",
-            "Official corporate event passes and visitor badge templates",
-            "Formal company invitations and stakeholder announcements",
-            "Employee recognition certificates and milestone celebration graphics",
-            "Multi-format uploads (PNG, SVG, JPG, CDR, print PDF)",
-            "1-Click Replace, Delete, and On Hold controls for Super Admins"
+            "Windows Explorer & Google Drive style nested folder directory tree",
+            "Instant lightbox preview for CDR, PDF, SVG, PNG, and high-res JPG files",
+            "1-Click Batch ZIP download engine for instant multi-asset retrieval",
+            "Festival creatives, corporate passes, invitation suites & HR award templates",
+            "Deep asset tagging and real-time keyword search across all folders",
+            "Admin lifecycle governance (Replace, Delete, and On Hold status locks)"
           ]}
           tiles={[
             {
-              title: "Festival Greetings",
-              desc: "Approved holiday creative templates ready for immediate team sharing.",
-              icon: <Sparkles className="h-5 w-5" />,
+              title: "Folder Tree Architecture",
+              desc: "Infinite nested folders organized by department, event, and holiday campaigns.",
+              icon: <FolderTree className="h-5 w-5" />,
               color: "emerald"
             },
             {
-              title: "Event Passes & Invites",
-              desc: "VIP launch invitations, depot inauguration passes, and conference badges.",
-              icon: <IdCard className="h-5 w-5" />,
+              title: "Multi-Format Lightbox",
+              desc: "Instant full-screen previews for CDR, SVG, PDF, and high-res images.",
+              icon: <Eye className="h-5 w-5" />,
               color: "cyan"
+            },
+            {
+              title: "Batch ZIP Download",
+              desc: "Download entire folders or multi-selected creatives in a single ZIP package.",
+              icon: <Download className="h-5 w-5" />,
+              color: "blue"
+            },
+            {
+              title: "Creative Event Suites",
+              desc: "VIP launch passes, depot inauguration invites, and conference badges.",
+              icon: <IdCard className="h-5 w-5" />,
+              color: "purple"
             },
             {
               title: "HR & Employee Awards",
               desc: "Star of the Month, annual awards, and training completion certificates.",
               icon: <Users className="h-5 w-5" />,
-              color: "blue"
-            },
-            {
-              title: "Multi-Format Vault",
-              desc: "Store and retrieve CDR, PDF, SVG, and high-res PNG from one interface.",
-              icon: <Database className="h-5 w-5" />,
-              color: "purple"
-            },
-            {
-              title: "Attribution Tracking",
-              desc: "Clear timestamps and uploader history for internal accountability.",
-              icon: <Clock className="h-5 w-5" />,
               color: "amber"
             },
             {
-              title: "Admin Lifecycle Controls",
-              desc: "Archive, replace, or hold graphics to prevent outdated circulation.",
-              icon: <Sliders className="h-5 w-5" />,
+              title: "Admin Status Control",
+              desc: "Instantly toggle graphics to On Hold to block unapproved vendor downloads.",
+              icon: <ShieldCheck className="h-5 w-5" />,
               color: "rose"
             }
           ]}
@@ -1402,14 +1409,15 @@ export function InteractivePresentationDeck({
       render: () => (
         <SlideLayoutOption2
           title="Photos and Videos Repository"
-          headline="Transvolt's Visual & Media Archive"
-          paragraph="Curated, high-resolution media gallery organized by operational milestones, site deployments, fleet rollouts, and employee achievements across all regional operations."
+          headline="IndexedDB High-Capacity Photo Vault & 4K Media Archive"
+          paragraph="Ultra-high-resolution media archive backed by client-side IndexedDB Photo Vault technology, preserving raw, uncompressed 4K drone photography, depot operations, and fleet rollouts."
           bullets={[
-            "Electric bus & commercial vehicle fleet rollouts on the road",
-            "High-power charging depot infrastructure in daily operation",
-            "Official flag-off ceremonies with state transport ministers",
-            "Driver training, workshop safety drills, and technician teams",
-            "Instant search and download for PR, presentations, and media kits"
+            "IndexedDB Photo Vault: Unlimited client-side local caching with zero compression loss",
+            "4K aerial drone footage and on-road electric bus fleet deployments",
+            "High-power DC charging depot infrastructure and sub-station photo archives",
+            "Official milestone flag-off ceremonies with state transport ministers",
+            "Multi-category metadata search filtered by depot location, OEM, and event date",
+            "Instant download of press-ready assets for PR, social media, and board presentations"
           ]}
           tiles={[
             {
@@ -1431,9 +1439,9 @@ export function InteractivePresentationDeck({
               color: "blue"
             },
             {
-              title: "Leadership & Site Visits",
-              desc: "Client walkthroughs, OEM factory tours, and executive board meetings.",
-              icon: <Building className="h-5 w-5" />,
+              title: "IndexedDB Photo Vault",
+              desc: "Unlimited multi-gigabyte local storage retaining raw image fidelity.",
+              icon: <Database className="h-5 w-5" />,
               color: "purple"
             },
             {
@@ -1464,27 +1472,27 @@ export function InteractivePresentationDeck({
       render: () => (
         <SlideLayoutOption1
           title="Vehicle Fleet Branding"
-          headline="The Right Artwork for the Right Vehicle & Project"
-          paragraph="Different electric vehicles require distinct artwork due to OEM body variants, emergency exit placements, window cuts, and specific state transport authority contracts."
+          headline="Fleet Livery Blueprint Standards & 3M Vinyl Wraps"
+          paragraph="Precision blueprint specifications and wrap standards across all electric bus, truck, and van models. Fully integrated with the new Eva Design Tool for custom livery design and instant vendor press handoffs."
           bullets={[
-            "OEM-specific body structures (Tata Motors, JBM, Olectra, Switch Mobility)",
-            "Exact window cutouts and emergency door clearance specifications",
-            "State transport & municipal fleet contract guidelines (BEST, MSRTC, etc.)",
-            "Pre-verified full body wrap and partial decal layouts",
-            "Direct sharing of production CDR files with wrap vendors",
-            "Eliminates costly measurement errors during vinyl application"
+            "Direct synergy with the brand-new Eva Design Tool Studio for browser-based CAD livery customization",
+            "OEM-specific body mapping (Tata Motors, JBM, Olectra, Switch Mobility electric buses)",
+            "Window perforation, emergency door clearances, and mandatory safety decals",
+            "State municipal transport contract standards (BEST, MSRTC, and regional transit authorities)",
+            "Production-ready vector CDR and SVG decal kits for wide-format 3M vinyl wrappers",
+            "Eliminates costly measuring errors, fleet downtime, and vinyl re-application expenses"
           ]}
           tiles={[
+            {
+              title: "Eva Studio Synergy",
+              desc: "Design wraps interactively on multi-angle vehicle models in the new studio.",
+              icon: <Sparkles className="h-5 w-5" />,
+              color: "emerald"
+            },
             {
               title: "OEM Structure Mapping",
               desc: "Specific body layouts for 9-meter, 12-meter, and articulated electric buses.",
               icon: <Truck className="h-5 w-5" />,
-              color: "emerald"
-            },
-            {
-              title: "Chassis Sizing",
-              desc: "Dimension-accurate blueprint templates reflecting real panel seam lines.",
-              icon: <Sliders className="h-5 w-5" />,
               color: "cyan"
             },
             {
@@ -1579,11 +1587,200 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 16: ORGANIZATION CHART (OPTION 1 STYLE)
+    // SLIDE 16: EVA DESIGN TOOL (OPTION 1 STYLE)
     // -------------------------------------------------------------
     {
       id: 16,
-      category: "16 — Organization Chart",
+      category: "16 — Eva Design Tool",
+      title: "Eva Design Tool Studio",
+      subtitle: "Interactive EV Livery Studio & Fleet Customization Canvas.",
+      render: () => (
+        <SlideLayoutOption1
+          title="Eva Design Tool Studio"
+          headline="Interactive EV Livery Studio & Real-Time Wrap Visualizer"
+          paragraph="An industry-first browser-based EV livery design suite. Enables corporate design teams, marketing leads, and depot managers to customize commercial electric vehicles (buses, trucks, vans) with vector precision, live typography bending, and instant production exports."
+          bullets={[
+            "Interactive multi-angle vehicle models (Electric Bus, Commercial Truck, Delivery Van, Passenger EV)",
+            "CorelDRAW vector text panel with live curve deformation & arc envelope bending",
+            "Professional Bézier vector pen tool with node control, tangent handles & path closure",
+            "Layer management system with ordering, grouping, opacity, and locking",
+            "Color-matched vinyl library aligned with Transvolt #548235 Green and #3B82F6 Blue",
+            "Lossless SVG & Ultra-HD print-ready PNG export calibrated to real-world vehicle dimensions"
+          ]}
+          tiles={[
+            {
+              title: "Multi-Fleet 2D/3D Canvas",
+              desc: "Instantly switch between buses, trucks, and vans with true vehicle scale and side/front/rear viewports.",
+              icon: <Truck className="h-5 w-5" />,
+              color: "emerald"
+            },
+            {
+              title: "CorelDRAW Text Engine",
+              desc: "Manipulate text on paths, apply arc contours, letter tracking, and live vector curve warping.",
+              icon: <Type className="h-5 w-5" />,
+              color: "cyan"
+            },
+            {
+              title: "Bézier Vector Pen Tool",
+              desc: "Create custom livery graphics with node manipulation, tangent handle control, and path closing.",
+              icon: <Sparkles className="h-5 w-5" />,
+              color: "blue"
+            },
+            {
+              title: "Fleet Vinyl Color Matrix",
+              desc: "Direct palette locking with Transvolt approved HEX, CMYK, and Pantone specifications.",
+              icon: <Palette className="h-5 w-5" />,
+              color: "purple"
+            },
+            {
+              title: "Layer Stack & History",
+              desc: "Fine-tune design layers, lock base body panels, adjust transparency, and undo/redo changes.",
+              icon: <Layers className="h-5 w-5" />,
+              color: "amber"
+            },
+            {
+              title: "Production Vector Export",
+              desc: "Download high-precision SVG and print-ready decals for wrap installers and vinyl printers.",
+              icon: <Download className="h-5 w-5" />,
+              color: "rose"
+            }
+          ]}
+        />
+      )
+    },
+
+    // -------------------------------------------------------------
+    // SLIDE 17: GENERATE AUDIO (OPTION 2 STYLE)
+    // -------------------------------------------------------------
+    {
+      id: 17,
+      category: "17 — Generate Audio",
+      title: "Brand Sonic Identity Studio",
+      subtitle: "AI Audio Composer & Corporate Voice Studio.",
+      render: () => (
+        <SlideLayoutOption2
+          title="Brand Sonic Identity Studio"
+          headline="AI Sonic Identity & Corporate Soundscape Generator"
+          paragraph="A cutting-edge audio production studio for the Transvolt brand. Empowers corporate communication, video editors, and presentation presenters to generate consistent sonic logos, video soundtracks, and multilingual announcements with zero copyright friction."
+          bullets={[
+            "Standardized corporate sonic signatures & acoustic brand logos",
+            "Multilingual Text-to-Speech voice engine with natural pacing & tone selection",
+            "Customizable background scoring for investor pitches, corporate videos & keynote decks",
+            "Pre-cleared enterprise licensing for internal webinars, social campaigns & TV spots",
+            "Lossless 24-bit 48kHz WAV and high-bitrate 320kbps MP3 audio downloads",
+            "Seamless integration into PowerPoint presentations and marketing collateral"
+          ]}
+          tiles={[
+            {
+              title: "Sonic Logo Synthesizer",
+              desc: "Create signature acoustic cues for video intros, app launch sounds, and brand transitions.",
+              icon: <Sparkles className="h-5 w-5" />,
+              color: "emerald"
+            },
+            {
+              title: "Corporate Voiceover AI",
+              desc: "Convert scripts into natural speech for training modules, safety briefings, and onboarding.",
+              icon: <Laptop className="h-5 w-5" />,
+              color: "cyan"
+            },
+            {
+              title: "Background Scoring",
+              desc: "Generate ambient soundscapes and cinematic music tailored to sustainable energy themes.",
+              icon: <Music2 className="h-5 w-5" />,
+              color: "blue"
+            },
+            {
+              title: "Studio-Grade Master Files",
+              desc: "Export uncompressed 24-bit WAV files engineered for conference room speakers and video edits.",
+              icon: <Download className="h-5 w-5" />,
+              color: "purple"
+            },
+            {
+              title: "Multi-Language Support",
+              desc: "Produce localized voiceovers in regional Indian languages and global business dialects.",
+              icon: <Users className="h-5 w-5" />,
+              color: "amber"
+            },
+            {
+              title: "100% Commercial Clearance",
+              desc: "All synthesized audio assets are pre-cleared for broadcast, YouTube, and corporate events.",
+              icon: <ShieldCheck className="h-5 w-5" />,
+              color: "rose"
+            }
+          ]}
+        />
+      )
+    },
+
+    // -------------------------------------------------------------
+    // SLIDE 18: COMPANY MASTER (OPTION 1 STYLE)
+    // -------------------------------------------------------------
+    {
+      id: 18,
+      category: "18 — Company Master",
+      title: "Corporate Legal Master",
+      subtitle: "Single Source of Truth for Entity Data, GSTIN & Registrations.",
+      render: () => (
+        <SlideLayoutOption1
+          title="Corporate Legal Master"
+          headline="Unified Legal Entity Repository & Compliance Vault"
+          paragraph="Company Master serves as the single centralized source of truth for all Transvolt corporate identities, subsidiaries, and regional Special Purpose Vehicles (SPVs). Eliminates billing rejections, wrong CIN/GST numbers, and outdated registered address errors."
+          bullets={[
+            "Complete corporate profiles for Transvolt Mobility Pvt Ltd and all regional SPVs",
+            "Verified Corporate Identity Numbers (CIN), GSTIN certificates & PAN records",
+            "Official registered office and depot addresses with pin code accuracy",
+            "Authorized banking details, account numbers, and IFSC credentials for procurement",
+            "Authorized signatory profiles, digital signatures, and corporate seals",
+            "Direct automated sync with official letterhead generators and PO templates"
+          ]}
+          tiles={[
+            {
+              title: "Multi-Entity Architecture",
+              desc: "Manage parent corporation, regional transit SPVs, and joint venture entities under one roof.",
+              icon: <Building2 className="h-5 w-5" />,
+              color: "emerald"
+            },
+            {
+              title: "Verified Tax & CIN Registry",
+              desc: "Instant access to valid GSTIN, PAN, TAN, and CIN credentials with 1-click clipboard copy.",
+              icon: <FileText className="h-5 w-5" />,
+              color: "cyan"
+            },
+            {
+              title: "Official Banking Repository",
+              desc: "Pre-verified bank accounts, RTGS/NEFT details, and IFSC codes preventing transaction errors.",
+              icon: <Database className="h-5 w-5" />,
+              color: "blue"
+            },
+            {
+              title: "Registered Office Directory",
+              desc: "Precise corporate addresses, regional branch locations, and depot hubs nationwide.",
+              icon: <Compass className="h-5 w-5" />,
+              color: "purple"
+            },
+            {
+              title: "Signatory Governance",
+              desc: "Store approved director signatures and corporate seals with strict role-based authorization.",
+              icon: <Lock className="h-5 w-5" />,
+              color: "amber"
+            },
+            {
+              title: "Stationery Auto-Population",
+              desc: "Seamlessly injects exact legal footers and entity headers into generated corporate letterheads.",
+              icon: <RefreshCw className="h-5 w-5" />,
+              color: "rose"
+            }
+          ]}
+        />
+      )
+    },
+
+    // -------------------------------------------------------------
+    // SLIDE 19: ORGANIZATION CHART (OPTION 1 STYLE)
+    // -------------------------------------------------------------
+    {
+      id: 19,
+      category: "19 — Organization Chart",
       title: "Organization Hierarchy",
       subtitle: "Site-Wise Interactive Organization Management.",
       render: () => (
@@ -1642,11 +1839,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 17: CONTROLLED ACCESS & USER MANAGEMENT (OPTION 2 STYLE)
+    // SLIDE 20: CONTROLLED ACCESS & USER MANAGEMENT (OPTION 2 STYLE)
     // -------------------------------------------------------------
     {
-      id: 17,
-      category: "17 — Access Management",
+      id: 20,
+      category: "20 — Access Management",
       title: "Controlled Access Governance",
       subtitle: "Right Person. Right Page. Right Permission.",
       render: () => (
@@ -1704,11 +1901,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 18: SMART ACCESS REQUEST SYSTEM (OPTION 1 STYLE)
+    // SLIDE 21: SMART ACCESS REQUEST SYSTEM (OPTION 1 STYLE)
     // -------------------------------------------------------------
     {
-      id: 18,
-      category: "18 — Access Request System",
+      id: 21,
+      category: "21 — Access Request System",
       title: "Smart Access Request",
       subtitle: "Simple for Users. Controlled for Admins.",
       render: () => (
@@ -1767,11 +1964,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 19: CONTROLLED SHARING (OPTION 2 STYLE)
+    // SLIDE 22: CONTROLLED SHARING (OPTION 2 STYLE)
     // -------------------------------------------------------------
     {
-      id: 19,
-      category: "19 — Controlled Sharing",
+      id: 22,
+      category: "22 — Controlled Sharing",
       title: "Timed Controlled Sharing",
       subtitle: "Share with Time-Limited Security.",
       render: () => (
@@ -1829,11 +2026,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 20: THE TRANSFORMATION (OPTION 1 STYLE)
+    // SLIDE 23: THE TRANSFORMATION (OPTION 1 STYLE)
     // -------------------------------------------------------------
     {
-      id: 20,
-      category: "20 — The Transformation",
+      id: 23,
+      category: "23 — The Transformation",
       title: "Before vs. With Portal",
       subtitle: "From Scattered Files to a Managed Brand Operating System.",
       render: () => (
@@ -1892,11 +2089,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 21: BUSINESS VALUE (OPTION 2 STYLE)
+    // SLIDE 24: BUSINESS VALUE (OPTION 2 STYLE)
     // -------------------------------------------------------------
     {
-      id: 21,
-      category: "21 — Business Value",
+      id: 24,
+      category: "24 — Business Value",
       title: "Business Value & ROI",
       subtitle: "Why This Portal Matters to Transvolt.",
       render: () => (
@@ -1954,11 +2151,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 22: THE 7 PILLARS (OPTION 1 STYLE)
+    // SLIDE 25: THE 7 PILLARS (OPTION 1 STYLE)
     // -------------------------------------------------------------
     {
-      id: 22,
-      category: "22 — The 7 Pillars",
+      id: 25,
+      category: "25 — The 7 Pillars",
       title: "Brand Operating System",
       subtitle: "From Brand Library to Brand Operating System.",
       render: () => (
@@ -2017,11 +2214,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 23: FUTURE ROADMAP (OPTION 2 STYLE)
+    // SLIDE 26: FUTURE ROADMAP (OPTION 2 STYLE)
     // -------------------------------------------------------------
     {
-      id: 23,
-      category: "23 — The Road Ahead",
+      id: 26,
+      category: "26 — The Road Ahead",
       title: "Future Roadmap",
       subtitle: "Future Roadmap & Technological Evolution.",
       render: () => (
@@ -2079,11 +2276,11 @@ export function InteractivePresentationDeck({
     },
 
     // -------------------------------------------------------------
-    // SLIDE 24: FINAL / THANK YOU SLIDE
+    // SLIDE 27: FINAL / THANK YOU SLIDE
     // -------------------------------------------------------------
     {
-      id: 24,
-      category: "24 — Thank You",
+      id: 27,
+      category: "27 — Thank You",
       title: "Conclusion & Access",
       subtitle: "One Platform. One Trusted Source. One Transvolt Brand.",
       render: ({ onRequestAccess, onJump }) => (

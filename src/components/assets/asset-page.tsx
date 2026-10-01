@@ -26,6 +26,7 @@ import {
   Play,
 } from "lucide-react"
 import { InteractivePresentationDeck } from "@/components/presentation/interactive-presentation-deck"
+import { PresentationPagesShowcase } from "@/components/presentation/presentation-pages-showcase"
 
 const PAGE_ICON_MAP: Record<string, React.ElementType> = {
   "logo-color": Palette,
@@ -641,6 +642,12 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
   const { incrementDownload } = useStats()
   const [selectedAsset, setSelectedAsset] = React.useState<Asset | null>(null)
   const [isPresentationDeckOpen, setIsPresentationDeckOpen] = React.useState(false)
+  const [presentationInitialSlide, setPresentationInitialSlide] = React.useState<number>(0)
+
+  const handleOpenPresentationDeck = (slideIndex: number = 0) => {
+    setPresentationInitialSlide(slideIndex)
+    setIsPresentationDeckOpen(true)
+  }
 
   const isSuperAdmin = user?.role === "Super Admin"
 
@@ -793,30 +800,35 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
           )}
         </div>
 
-        {/* Presentation Page Hero Launch Banner */}
+        {/* Presentation Page Hero Launch Banner & Portal Ecosystem Showcase */}
         {config.slug === "presentation" && (
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-background to-blue-500/10 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
-            <div className="space-y-2 max-w-xl text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                <Play className="h-3.5 w-3.5 fill-current" />
-                Official 25-Slide Deck
+          <div className="space-y-8">
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-background to-blue-500/10 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+              <div className="space-y-2 max-w-xl text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  Official 28-Slide Deck
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  Interactive Transvolt Brand Presentation Deck
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Experience the comprehensive 28-slide interactive presentation with auto-play, speed controls, chapter navigation, and downloadable PowerPoint assets.
+                </p>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Interactive Transvolt Brand Presentation Deck
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Experience the comprehensive 25-slide interactive presentation with auto-play, speed controls, chapter navigation, and downloadable PowerPoint assets.
-              </p>
+              <div className="flex items-center gap-3 shrink-0">
+                <Button
+                  onClick={() => handleOpenPresentationDeck(0)}
+                  className="h-11 px-5 rounded-xl bg-gradient-to-r from-[#548235] to-[#4472C4] hover:from-[#48732e] hover:to-[#3b63ab] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4 fill-current" />
+                  Watch Interactive Presentation
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <Button
-                onClick={() => setIsPresentationDeckOpen(true)}
-                className="h-11 px-5 rounded-xl bg-gradient-to-r from-[#548235] to-[#4472C4] hover:from-[#48732e] hover:to-[#3b63ab] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center gap-2"
-              >
-                <Play className="h-4 w-4 fill-current" />
-                Watch Interactive Presentation
-              </Button>
-            </div>
+
+            {/* Comprehensive Portal Pages Directory: Benefits & Standout Features */}
+            <PresentationPagesShowcase onOpenSlide={handleOpenPresentationDeck} />
           </div>
         )}
 
@@ -1769,6 +1781,7 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
       <InteractivePresentationDeck
         isOpen={isPresentationDeckOpen}
         onClose={() => setIsPresentationDeckOpen(false)}
+        initialSlide={presentationInitialSlide}
       />
     </div>
   )
