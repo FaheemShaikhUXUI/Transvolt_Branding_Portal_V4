@@ -11,6 +11,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/logos") ||
     pathname.startsWith("/icons") ||
     pathname.startsWith("/cat-peek") ||
+    pathname.startsWith("/share") ||
     pathname === "/login" ||
     pathname.includes(".")
   ) {

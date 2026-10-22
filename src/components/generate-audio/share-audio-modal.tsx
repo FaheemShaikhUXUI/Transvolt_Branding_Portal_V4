@@ -41,7 +41,7 @@ export function ShareAudioModal({
     if (open) {
       setCopied(false)
       const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
-      const timestamp = Date.now() + 6 * 60 * 60 * 1000 // 6 hours expiration
+      const timestamp = Date.now()
       const id = Math.random().toString(36).substring(2, 10)
       const url = `${origin}/share/audio/${id}?t=${timestamp}`
       setShareUrl(url)
@@ -60,6 +60,19 @@ export function ShareAudioModal({
         }
         localStorage.setItem(`branding_share_audio_${id}_data`, JSON.stringify(payload))
         localStorage.setItem(`branding_share_audio_${id}_time`, Date.now().toString())
+
+        // Sync to server API so links work in any other browser/device
+        fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id,
+            type: "audio",
+            data: payload,
+            createdAt: timestamp,
+            expiresAt: timestamp + 6 * 60 * 60 * 1000,
+          }),
+        }).catch(() => {})
       } catch (err) {
         console.error("Failed to save share snapshot:", err)
       }

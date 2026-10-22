@@ -9,6 +9,8 @@ import { PptIcon } from "@/components/assets/asset-tile"
 import { Toaster, toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { getAllAssetsFromDB } from "@/lib/assets/photo-vault"
+import { DEFAULT_LOGO_ASSETS } from "@/lib/assets/logo-seed"
 
 interface Asset {
   id: string
@@ -364,20 +366,71 @@ export default function ShareAssetPage() {
 
     setCreatedTime(initialTime)
 
-    // Load asset from storage
-    const storedAssets = localStorage.getItem("branding_portal_assets")
-    if (storedAssets) {
+    // Load asset with multi-tier fallback
+    async function loadAsset() {
       try {
-        const parsed = JSON.parse(storedAssets) as Asset[]
-        const found = parsed.find(a => a.id === id)
-        if (found) {
-          setAsset(found)
+        // Tier 1: Dedicated share snapshot
+        const snapshot = localStorage.getItem(`branding_share_${id}_data`)
+        if (snapshot) {
+          const parsedSnap = JSON.parse(snapshot) as Asset
+          if (parsedSnap && parsedSnap.id === id) {
+            setAsset(parsedSnap)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Tier 2: Check server API /api/share?id=${id}&type=asset
+        try {
+          const res = await fetch(`/api/share?id=${id}&type=asset`)
+          if (res.ok) {
+            const json = await res.json()
+            if (json.found && json.data) {
+              setAsset(json.data)
+              setLoading(false)
+              return
+            }
+          }
+        } catch {}
+
+        // Tier 3: General assets in localStorage
+        const storedAssets = localStorage.getItem("branding_portal_assets")
+        if (storedAssets) {
+          const parsed = JSON.parse(storedAssets) as Asset[]
+          const found = parsed.find(a => a.id === id)
+          if (found) {
+            setAsset(found)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Tier 3: Photo Vault IndexedDB (handles multi-gigabyte uncompressed assets)
+        const dbAssets = await getAllAssetsFromDB()
+        if (dbAssets && Array.isArray(dbAssets)) {
+          const found = dbAssets.find((a: any) => a.id === id)
+          if (found) {
+            setAsset(found)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Tier 4: Default seed assets (e.g. logos)
+        const seedFound = DEFAULT_LOGO_ASSETS.find(a => a.id === id)
+        if (seedFound) {
+          setAsset(seedFound)
+          setLoading(false)
+          return
         }
       } catch (e) {
-        console.error("Failed to parse assets", e)
+        console.error("Failed to load asset", e)
+      } finally {
+        setLoading(false)
       }
     }
-    setLoading(false)
+
+    loadAsset()
   }, [id, searchParams])
 
   // Lock document background to black to eliminate white scrollbar gutter

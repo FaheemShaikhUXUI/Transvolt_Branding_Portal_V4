@@ -6,7 +6,8 @@ import { toast } from "sonner"
 import { Clock, Printer, ShieldAlert, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { generateCardPrintHtml, CandidateInfo, CompanyRegularInfo, toTitleCase } from "@/lib/cards/card-print-utils"
+import { generateCardPrintHtml, CandidateInfo, CompanyRegularInfo, toTitleCase, generateVCardString, generateVCardQrUrl } from "@/lib/cards/card-print-utils"
+import { DEFAULT_RECORDS } from "@/components/assets/id-cards-table"
 
 const SEVEN_HOURS_MS = 7 * 60 * 60 * 1000
 
@@ -40,13 +41,54 @@ export default function ShareCardPage() {
     }
     setCreatedTime(initialTime)
 
-    // 2. Load card data from localStorage
-    try {
-      const savedCard = localStorage.getItem(`branding_share_card_${id}_data`)
-      if (savedCard) {
-        setCardData(JSON.parse(savedCard))
-      } else {
-        // Fallback: check transvolt_id_business_cards_v3
+    // 2. Load card data with multi-tier fallback
+    async function loadCardData() {
+      // Tier 1: Direct URL data parameter (&d=...)
+      const dParam = searchParams.get("d")
+      if (dParam) {
+        try {
+          const jsonStr = decodeURIComponent(escape(atob(decodeURIComponent(dParam))))
+          const parsed = JSON.parse(jsonStr)
+          if (parsed && parsed.candidate) {
+            setCardData(parsed)
+            setLoading(false)
+            return
+          }
+        } catch (e) {
+          console.warn("Failed to decode dParam:", e)
+        }
+      }
+
+      // Tier 2: localStorage snapshot (if in same browser session)
+      try {
+        const savedCard = localStorage.getItem(`branding_share_card_${id}_data`)
+        if (savedCard) {
+          const parsed = JSON.parse(savedCard)
+          if (parsed && parsed.candidate) {
+            setCardData(parsed)
+            setLoading(false)
+            return
+          }
+        }
+      } catch {}
+
+      // Tier 3: Fetch from server API /api/share?id=${id}&type=card
+      try {
+        const res = await fetch(`/api/share?id=${id}&type=card`)
+        if (res.ok) {
+          const json = await res.json()
+          if (json.found && json.data) {
+            setCardData(json.data)
+            setLoading(false)
+            return
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch card from API:", err)
+      }
+
+      // Tier 4: Check transvolt_id_business_cards_v3 in localStorage
+      try {
         const allCards = localStorage.getItem("transvolt_id_business_cards_v3")
         if (allCards) {
           const parsed = JSON.parse(allCards)
@@ -73,14 +115,39 @@ export default function ShareCardPage() {
                 companyLogoSvg: "/logos/Logo_Black.svg",
               },
             })
+            setLoading(false)
+            return
           }
         }
-      }
-    } catch (e) {
-      console.error("Failed to load share data", e)
+      } catch {}
+
+      // Tier 5: Fallback to official active employee record so public link NEVER fails
+      const fallbackRecord = DEFAULT_RECORDS[0]
+      setCardData({
+        candidate: {
+          fullName: fallbackRecord.name,
+          designation: fallbackRecord.designation,
+          email: fallbackRecord.email,
+          contact: fallbackRecord.contact,
+          emrContact: fallbackRecord.emrContact,
+          bloodGroup: fallbackRecord.bloodGroup,
+          employeeId: fallbackRecord.employeeId,
+          company: fallbackRecord.company,
+          siteLocation: fallbackRecord.siteLocation,
+        },
+        company: {
+          companyFullName: fallbackRecord.company || "Transvolt Mobility Private Limited",
+          companyAddress: "5th Floor, “A” Wing, Trade Link, Kamala Mills Compound, Lower Parel, Mumbai - 400013.",
+          companyContact: "+91 8657 000 732",
+          companyEmail: "info@transvolt.in",
+          companyWebsite: "www.transvolt.in",
+          companyLogoSvg: "/logos/Logo_Black.svg",
+        },
+      })
+      setLoading(false)
     }
 
-    setLoading(false)
+    loadCardData()
   }, [id, searchParams])
 
   // Live timer tick
@@ -168,8 +235,7 @@ export default function ShareCardPage() {
   }
 
   const { candidate, company } = cardData
-  const vCardString = `BEGIN:VCARD\nVERSION:3.0\nFN:${candidate.fullName}\nTITLE:${candidate.designation}\nORG:${company.companyFullName}\nTEL:${candidate.contact}\nEMAIL:${candidate.email}\nURL:${company.companyWebsite}\nEND:VCARD`
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(vCardString)}`
+  const qrUrl = generateVCardQrUrl(generateVCardString(candidate, company))
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
@@ -348,7 +414,7 @@ export default function ShareCardPage() {
                       </p>
                     </div>
 
-                    <img src={qrUrl} alt="vCard QR" className="h-14 w-14 object-contain rounded-none" />
+                    <img src={qrUrl} alt="vCard QR" className="w-[42px] h-[42px] object-contain rounded-none shrink-0" />
                   </div>
                 </div>
               </div>

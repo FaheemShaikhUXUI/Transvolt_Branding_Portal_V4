@@ -499,19 +499,37 @@ export function CreateIdBusinessCardModal({
   const handleSharePdf = (type: "both" | "id" | "business") => {
     const shareId = `card_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
     const now = Date.now()
+    const payload = { candidate, company: companyInfo }
 
-    // Store share data and timestamp in localStorage
+    // 1. Store locally in localStorage
     try {
       localStorage.setItem(`branding_share_card_${shareId}_time`, now.toString())
-      localStorage.setItem(
-        `branding_share_card_${shareId}_data`,
-        JSON.stringify({ candidate, company: companyInfo })
-      )
+      localStorage.setItem(`branding_share_card_${shareId}_data`, JSON.stringify(payload))
     } catch (e) {
       console.error("Storage error", e)
     }
 
-    const shareUrl = `${window.location.origin}/share/card/${shareId}?type=${type}&t=${now}`
+    // 2. Persist to server API so any other browser/device can access it
+    try {
+      fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: shareId,
+          type: "card",
+          data: payload,
+          createdAt: now,
+        }),
+      }).catch((err) => console.warn("Could not sync share to API:", err))
+    } catch {}
+
+    // 3. Encode data into URL parameter as an instant zero-dependency fallback
+    let encodedData = ""
+    try {
+      encodedData = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payload)))))
+    } catch {}
+
+    const shareUrl = `${window.location.origin}/share/card/${shareId}?type=${type}&t=${now}${encodedData ? `&d=${encodedData}` : ""}`
     navigator.clipboard.writeText(shareUrl)
 
     toast.success("7-Hour Secure Share link copied to clipboard!", {
@@ -1471,7 +1489,7 @@ export function CreateIdBusinessCardModal({
                           <img
                             src={qrCodeUrl}
                             alt="Contact QR"
-                            className="w-[38px] h-[38px] object-contain rounded-none select-none"
+                            className="w-[28.5px] h-[28.5px] object-contain rounded-none select-none"
                           />
                         </div>
                       </div>

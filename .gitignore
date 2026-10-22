@@ -47,3 +47,5 @@ next-env.d.ts
 /.agents/
 /Presentation/
 /scripts/
+/.data/
+test1.png

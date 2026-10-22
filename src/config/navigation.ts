@@ -15,6 +15,7 @@ import {
   FolderTree,
   Sparkles,
   Music2,
+  ClipboardCheck,
 } from "lucide-react"
 
 export const navigationConfig = [
@@ -98,5 +99,11 @@ export const navigationConfig = [
     title: "Brand Philosophy",
     href: "/brand-philosophy",
     icon: Compass,
+  },
+  {
+    title: "How to Test",
+    href: "/how-to-test",
+    icon: ClipboardCheck,
+    tag: "QA",
   },
 ]

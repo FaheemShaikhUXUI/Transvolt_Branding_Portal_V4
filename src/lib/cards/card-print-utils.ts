@@ -1,3 +1,5 @@
+import QRCode from "qrcode"
+
 export interface CandidateInfo {
   fullName: string
   designation: string
@@ -20,16 +22,24 @@ export interface CompanyRegularInfo {
   companyLogoSvg: string
 }
 
-export function generateVCardString(candidate: CandidateInfo, company: CompanyRegularInfo): string {
-  return `BEGIN:VCARD
-VERSION:3.0
-FN:${candidate.fullName || "Personnel"}
-TITLE:${candidate.designation || ""}
-ORG:${company.companyFullName || "Transvolt Mobility Private Limited"}
-TEL;TYPE=CELL:${candidate.contact || ""}
-EMAIL:${candidate.email || ""}
-URL:${company.companyWebsite || "www.transvolt.in"}
-END:VCARD`.trim()
+export function generateVCardString(candidate: CandidateInfo, company?: CompanyRegularInfo): string {
+  const name = candidate.fullName?.trim() || "Personnel"
+  const tel = candidate.contact?.trim() || ""
+  const email = candidate.email?.trim() || ""
+  const org = company?.companyFullName ? "Transvolt" : ""
+
+  // Streamlined vCard format with essential fields: produces low-density matrix with large, chunky scan dots
+  const lines = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${name}`,
+    tel ? `TEL:${tel}` : "",
+    email ? `EMAIL:${email}` : "",
+    org ? `ORG:${org}` : "",
+    "END:VCARD"
+  ].filter(Boolean)
+
+  return lines.join("\n")
 }
 
 export function toTitleCase(str: string): string {
@@ -42,7 +52,22 @@ export function toTitleCase(str: string): string {
 }
 
 export function generateVCardQrUrl(vCardString: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&ecc=L&margin=0&data=${encodeURIComponent(vCardString)}`
+  try {
+    let svgResult = ""
+    QRCode.toString(
+      vCardString,
+      { type: "svg", errorCorrectionLevel: "L", margin: 0 },
+      (err, str) => {
+        if (!err && str) svgResult = str
+      }
+    )
+    if (svgResult) {
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svgResult)}`
+    }
+  } catch (err) {
+    console.warn("Local QR generation error:", err)
+  }
+  return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&ecc=L&margin=0&data=${encodeURIComponent(vCardString)}`
 }
 
 export function generateCardPrintHtml(
@@ -420,8 +445,8 @@ export function generateCardPrintHtml(
     }
 
     .biz-qr-img {
-      width: 17.5mm;
-      height: 17.5mm;
+      width: 13.1mm;
+      height: 13.1mm;
       border: none;
       padding: 0;
       background: white;

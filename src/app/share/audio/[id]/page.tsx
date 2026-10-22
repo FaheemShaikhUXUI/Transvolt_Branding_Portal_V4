@@ -96,13 +96,32 @@ export default function SharedAudioBothListPage() {
     }
     setCreatedTime(initialTime)
 
-    // 2. Load shared data from localStorage
-    try {
-      const saved = localStorage.getItem(`branding_share_audio_${id}_data`)
-      if (saved) {
-        setSharedData(JSON.parse(saved))
-      } else {
-        // Fallback demo data if opened in fresh window
+    // 2. Load shared data from API or localStorage
+    async function loadAudioData() {
+      try {
+        const saved = localStorage.getItem(`branding_share_audio_${id}_data`)
+        if (saved) {
+          setSharedData(JSON.parse(saved))
+          setLoading(false)
+          return
+        }
+
+        // Fetch from server API
+        const res = await fetch(`/api/share?id=${id}&type=audio`)
+        if (res.ok) {
+          const json = await res.json()
+          if (json.found && json.data) {
+            setSharedData(json.data)
+            setLoading(false)
+            return
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch shared audio from API:", err)
+      }
+
+      // Fallback demo data if opened in fresh window
+      try {
         setSharedData({
           id,
           companyName: "Transvolt Mobility Private Limited",
@@ -218,12 +237,14 @@ export default function SharedAudioBothListPage() {
           ],
           createdAt: initialTime,
         })
+      } catch (e) {
+        console.error("Failed to load shared audio data:", e)
+      } finally {
+        setLoading(false)
       }
-    } catch (e) {
-      console.error("Failed to load shared audio data:", e)
     }
 
-    setLoading(false)
+    loadAudioData()
   }, [id, searchParams])
 
   // Live timer tick

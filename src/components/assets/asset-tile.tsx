@@ -768,6 +768,22 @@ export function AssetTile({ asset, onSelect }: AssetTileProps) {
                       e.stopPropagation()
                       const created = Date.now()
                       localStorage.setItem(`branding_share_${asset.id}_time`, created.toString())
+                      try {
+                        localStorage.setItem(`branding_share_${asset.id}_data`, JSON.stringify(asset))
+                        fetch("/api/share", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            id: asset.id,
+                            type: "asset",
+                            data: asset,
+                            createdAt: created,
+                            expiresAt: created + 7 * 60 * 60 * 1000,
+                          }),
+                        }).catch(() => {})
+                      } catch (err) {
+                        console.error("Failed to store asset snapshot", err)
+                      }
                       const shareUrl = `${window.location.origin}/share/${asset.id}?t=${created}`
                       navigator.clipboard.writeText(shareUrl)
                       toast.success("7-Hour Secure Share link copied to clipboard!")

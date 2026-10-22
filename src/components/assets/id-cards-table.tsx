@@ -86,7 +86,7 @@ export function renderStatusBadge(status?: string) {
   )
 }
 
-const DEFAULT_RECORDS: IdCardRecord[] = [
+export const DEFAULT_RECORDS: IdCardRecord[] = [
   {
     id: "id-1",
     employeeId: "TV-2024-001",
