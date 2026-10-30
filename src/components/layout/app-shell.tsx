@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { Header } from "./header"
 import { SidebarProvider } from "./sidebar-context"
@@ -12,12 +12,32 @@ interface AppShellProps {
 
 function AppShellContent({ children }: AppShellProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const isEvaTool = pathname === "/eva-design-tool" || pathname?.startsWith("/eva-design-tool")
+  const isOrgBuilder =
+    (pathname === "/organization-chart" || pathname?.startsWith("/organization-chart") || pathname?.includes("/organization-chart")) &&
+    searchParams.get("mode") === "builder"
 
-  // For Eva Design Tool, remove portal's left sidebar, top header, and margins completely
-  if (isEvaTool) {
+  // For Eva Design Tool and while creating/editing Org Chart, remove portal's left sidebar, top header, and margins completely
+  React.useEffect(() => {
+    if (isEvaTool || isOrgBuilder) {
+      const origHtmlOverflow = document.documentElement.style.overflow
+      const origBodyOverflow = document.body.style.overflow
+      const origGutter = document.documentElement.style.scrollbarGutter
+      document.documentElement.style.overflow = "hidden"
+      document.body.style.overflow = "hidden"
+      document.documentElement.style.scrollbarGutter = "auto"
+      return () => {
+        document.documentElement.style.overflow = origHtmlOverflow
+        document.body.style.overflow = origBodyOverflow
+        document.documentElement.style.scrollbarGutter = origGutter
+      }
+    }
+  }, [isEvaTool, isOrgBuilder])
+
+  if (isEvaTool || isOrgBuilder) {
     return (
-      <main className="h-screen w-screen overflow-hidden bg-background">
+      <main className="fixed inset-0 h-screen h-[100dvh] w-screen w-[100dvw] overflow-hidden bg-background flex flex-col z-30">
         {children}
       </main>
     )
@@ -46,7 +66,9 @@ function AppShellContent({ children }: AppShellProps) {
 export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider>
-      <AppShellContent>{children}</AppShellContent>
+      <React.Suspense fallback={<div className="min-h-screen w-full bg-background">{children}</div>}>
+        <AppShellContent>{children}</AppShellContent>
+      </React.Suspense>
     </SidebarProvider>
   )
 }

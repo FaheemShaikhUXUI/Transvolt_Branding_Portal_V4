@@ -4,7 +4,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import {
   Mail, Globe, Building2, CheckSquare2, Square,
-  AlertTriangle, Send, CheckCircle2, Edit3, X, Info, Sparkles, Check, Lock, Crown
+  AlertTriangle, Send, CheckCircle2, Edit3, X, Info, Sparkles, Check, Lock, Crown, ChevronDown, SlidersHorizontal
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { RejectRequestDialog } from "./reject-request-dialog"
 
-const PAGES = navigationConfig.map((n) => ({ href: n.href, title: n.title }))
+const PAGES = navigationConfig.map((n) => ({ href: n.href, title: n.title, icon: n.icon }))
 const ALL_PERMISSIONS = PERMISSION_DEFINITIONS.map((p) => p.key)
 
 const INITIAL_FORM: AccessFormState = {
@@ -31,6 +31,7 @@ const INITIAL_FORM: AccessFormState = {
   accessScope: "ALL_PAGES",
   selectedPages: [],
   selectedPermissions: ["VIEW_ALL"],
+  pagePermissions: {},
 }
 
 // ─── Lightweight & Smooth Arrow Flight Overlay ──────────────────────────────
@@ -473,29 +474,53 @@ export function TabUserAccess() {
   const [rocketStartPos, setRocketStartPos] = React.useState<{ x: number; y: number } | null>(null)
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false)
   const [isRejecting, setIsRejecting] = React.useState(false)
+  const [openAccordions, setOpenAccordions] = React.useState<Record<string, boolean>>({})
   const sendBtnRef = React.useRef<HTMLButtonElement>(null)
 
   // Populate form when editing or reviewing access request
   React.useEffect(() => {
     if (activeAccessRequest) {
+      const scope: AccessScope =
+        activeAccessRequest.requestedScope === "ALL_PAGES" ? "ALL_PAGES" : "SPECIFIC_PAGES"
+      const pages = activeAccessRequest.requestedPages || []
+      const defaultPagePerms: Record<string, Permission[]> = {}
+      const initialOpen: Record<string, boolean> = {}
+      pages.forEach((p) => {
+        defaultPagePerms[p] = ["VIEW_ALL", "DOWNLOAD"]
+        initialOpen[p] = true
+      })
       setForm({
         email: activeAccessRequest.email,
-        accessScope: "ALL_PAGES",
-        selectedPages: [],
-        selectedPermissions: ["VIEW_ALL", "DOWNLOAD", "SHARE"],
+        accessScope: scope,
+        selectedPages: pages,
+        selectedPermissions: ["VIEW_ALL", "DOWNLOAD"],
+        pagePermissions: defaultPagePerms,
       })
+      setOpenAccordions(initialOpen)
       setEmailTouched(true)
     } else if (editingUser) {
+      const pagePerms: Record<string, Permission[]> = { ...(editingUser.pagePermissions || {}) }
+      const initialOpen: Record<string, boolean> = {}
+      editingUser.pages.forEach((p) => {
+        if (!pagePerms[p] || pagePerms[p].length === 0) {
+          pagePerms[p] =
+            editingUser.permissions.length > 0 ? [...editingUser.permissions] : ["VIEW_ALL"]
+        }
+        initialOpen[p] = true
+      })
       setForm({
         email: editingUser.email,
         accessScope: editingUser.accessScope,
         selectedPages: editingUser.pages,
         selectedPermissions: editingUser.permissions,
+        pagePermissions: pagePerms,
         editingUserId: editingUser.id,
       })
+      setOpenAccordions(initialOpen)
       setEmailTouched(true)
     } else {
       setForm(INITIAL_FORM)
+      setOpenAccordions({})
       setEmailTouched(false)
     }
   }, [activeAccessRequest, editingUser])
@@ -518,11 +543,87 @@ export function TabUserAccess() {
   }
 
   function togglePage(href: string) {
+    const isCurrentlySelected = form.selectedPages.includes(href)
+    setForm((f) => {
+      const isSelected = f.selectedPages.includes(href)
+      const newPages = isSelected
+        ? f.selectedPages.filter((p) => p !== href)
+        : [...f.selectedPages, href]
+
+      const newPagePerms = { ...(f.pagePermissions || {}) }
+      if (isSelected) {
+        delete newPagePerms[href]
+      } else {
+        if (!newPagePerms[href] || newPagePerms[href].length === 0) {
+          newPagePerms[href] = ["VIEW_ALL", "DOWNLOAD"]
+        }
+      }
+
+      return {
+        ...f,
+        selectedPages: newPages,
+        pagePermissions: newPagePerms,
+      }
+    })
+
+    setOpenAccordions((prev) => ({
+      ...prev,
+      [href]: !isCurrentlySelected,
+    }))
+  }
+
+  function toggleAccordion(href: string, e?: React.MouseEvent) {
+    e?.stopPropagation()
+    setOpenAccordions((prev) => ({
+      ...prev,
+      [href]: !prev[href],
+    }))
+  }
+
+  function togglePagePermission(href: string, perm: Permission) {
+    setForm((f) => {
+      const current = f.pagePermissions?.[href] || []
+      const updated = current.includes(perm)
+        ? current.filter((p) => p !== perm)
+        : [...current, perm]
+
+      return {
+        ...f,
+        pagePermissions: {
+          ...(f.pagePermissions || {}),
+          [href]: updated,
+        },
+      }
+    })
+  }
+
+  function setAllPermsForPage(href: string) {
     setForm((f) => ({
       ...f,
-      selectedPages: f.selectedPages.includes(href)
-        ? f.selectedPages.filter((p) => p !== href)
-        : [...f.selectedPages, href],
+      pagePermissions: {
+        ...(f.pagePermissions || {}),
+        [href]: [...ALL_PERMISSIONS],
+      },
+    }))
+  }
+
+  function setViewOnlyForPage(href: string) {
+    setForm((f) => ({
+      ...f,
+      pagePermissions: {
+        ...(f.pagePermissions || {}),
+        [href]: ["VIEW_ALL"],
+      },
+    }))
+  }
+
+  function clearPermsForPage(href: string) {
+    setForm((f) => ({
+      ...f,
+      pagePermissions: {
+        ...(f.pagePermissions || {}),
+        [href]: [],
+      },
     }))
   }
 
@@ -536,11 +637,31 @@ export function TabUserAccess() {
   }
 
   function selectAllPages() {
-    setForm((f) => ({ ...f, selectedPages: PAGES.map((p) => p.href) }))
+    const newPagePerms = { ...(form.pagePermissions || {}) }
+    const newOpen: Record<string, boolean> = {}
+
+    PAGES.forEach((p) => {
+      if (!newPagePerms[p.href] || newPagePerms[p.href].length === 0) {
+        newPagePerms[p.href] = ["VIEW_ALL", "DOWNLOAD"]
+      }
+      newOpen[p.href] = true
+    })
+
+    setForm((f) => ({
+      ...f,
+      selectedPages: PAGES.map((p) => p.href),
+      pagePermissions: newPagePerms,
+    }))
+    setOpenAccordions(newOpen)
   }
 
   function clearPages() {
-    setForm((f) => ({ ...f, selectedPages: [] }))
+    setForm((f) => ({
+      ...f,
+      selectedPages: [],
+      pagePermissions: {},
+    }))
+    setOpenAccordions({})
   }
 
   function selectAllPerms() {
@@ -564,13 +685,24 @@ export function TabUserAccess() {
       toast.error("Invalid email address format.")
       return false
     }
-    if (form.accessScope === "SPECIFIC_PAGES" && form.selectedPages.length === 0) {
-      toast.error("Please select at least one page to grant access to.")
-      return false
-    }
-    if (form.selectedPermissions.length === 0) {
-      toast.error("Please select at least one permission control.")
-      return false
+    if (form.accessScope === "SPECIFIC_PAGES") {
+      if (form.selectedPages.length === 0) {
+        toast.error("Please select at least one page to grant access to.")
+        return false
+      }
+      for (const pageHref of form.selectedPages) {
+        const perms = form.pagePermissions?.[pageHref] || []
+        if (perms.length === 0) {
+          const pageTitle = PAGES.find((p) => p.href === pageHref)?.title || pageHref
+          toast.error(`Please select at least one permission for "${pageTitle}".`)
+          return false
+        }
+      }
+    } else {
+      if (form.selectedPermissions.length === 0) {
+        toast.error("Please select at least one permission control.")
+        return false
+      }
     }
     return true
   }
@@ -591,16 +723,31 @@ export function TabUserAccess() {
     // Instantly launch paper rocket S-curve animation upon click
     setShowRocket(true)
 
+    const effectivePermissions =
+      form.accessScope === "SPECIFIC_PAGES"
+        ? Array.from(
+            new Set(
+              form.selectedPages.flatMap((p) => form.pagePermissions?.[p] || [])
+            )
+          )
+        : form.selectedPermissions
+
+    const submissionForm: AccessFormState = {
+      ...form,
+      selectedPermissions:
+        effectivePermissions.length > 0 ? effectivePermissions : ["VIEW_ALL"],
+    }
+
     try {
       if (isEditing && editingUser) {
-        await updateUser(editingUser.id, form)
+        await updateUser(editingUser.id, submissionForm)
         clearEdit()
       } else if (activeAccessRequest) {
-        await addUser(form, user?.email ?? "faheem.s@transvolt.in")
+        await addUser(submissionForm, user?.email ?? "faheem.s@transvolt.in")
         await approveRequest(activeAccessRequest.id, user?.email ?? "faheem.s@transvolt.in")
         clearAccessRequest()
       } else {
-        await addUser(form, user?.email ?? "admin")
+        await addUser(submissionForm, user?.email ?? "admin")
       }
     } catch {
       toast.error("Failed to save access settings. Please try again.")
@@ -775,48 +922,146 @@ export function TabUserAccess() {
               </div>
               <h4 className="text-sm font-bold text-foreground">Page Access Scope</h4>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {(["ALL_PAGES", "SPECIFIC_PAGES"] as AccessScope[]).map((scope) => {
-                const selected = form.accessScope === scope
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              {/* Tile 1: All Pages (Full Portal Scope) */}
+              {(() => {
+                const selected = form.accessScope === "ALL_PAGES"
                 return (
                   <button
-                    key={scope}
                     type="button"
-                    onClick={() => setScope(scope)}
+                    onClick={() => setScope("ALL_PAGES")}
                     className={cn(
-                      "flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all",
+                      "relative group flex flex-col items-start gap-3 rounded-2xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer overflow-hidden select-none border-2",
                       selected
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-xs"
-                        : "border-border/60 bg-muted/20 hover:border-primary/40 hover:bg-muted/40"
+                        ? "border-[#548235] bg-gradient-to-br from-[#548235]/12 via-[#548235]/5 to-background shadow-[0_0_20px_rgba(84,130,53,0.18)] ring-1 ring-[#548235]/30 dark:from-[#548235]/25 dark:border-[#7ee249]"
+                        : "border-border/80 bg-card hover:border-[#548235]/40 hover:bg-[#548235]/[0.03] shadow-xs"
                     )}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={cn(
-                          "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all",
-                          selected
-                            ? "border-primary bg-primary"
-                            : "border-muted-foreground/40"
-                        )}
-                      >
-                        {selected && <div className="h-2 w-2 rounded-full bg-primary-foreground" />}
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+                            selected
+                              ? "bg-[#548235] text-white shadow-xs"
+                              : "bg-[#548235]/10 text-[#548235] dark:text-[#7ee249] group-hover:bg-[#548235]/20"
+                          )}
+                        >
+                          <Globe className="h-4.5 w-4.5" />
+                        </div>
+                        <div>
+                          <span className="text-[15px] font-bold text-foreground tracking-tight block">
+                            All Pages
+                          </span>
+                          <span className="text-[11px] font-medium text-[#548235] dark:text-[#7ee249]">
+                            Full Portal Scope
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-sm font-semibold text-foreground">
-                        {scope === "ALL_PAGES" ? "All Pages" : "Specific Pages"}
-                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors",
+                            selected
+                              ? "bg-[#548235]/15 border-[#548235]/40 text-[#548235] dark:text-[#7ee249]"
+                              : "bg-muted text-muted-foreground border-border/60"
+                          )}
+                        >
+                          Full Access
+                        </Badge>
+                        <div
+                          className={cn(
+                            "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all",
+                            selected
+                              ? "border-[#548235] bg-[#548235] text-white"
+                              : "border-muted-foreground/35 bg-transparent"
+                          )}
+                        >
+                          {selected && <div className="h-2 w-2 rounded-full bg-white" />}
+                        </div>
+                      </div>
                     </div>
-                    <p className="pl-7 text-xs text-muted-foreground leading-relaxed">
-                      {scope === "ALL_PAGES"
-                        ? "User can access every page in the portal (current and future pages)."
-                        : "Manually choose which pages this user can access."}
+
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-0.5">
+                      User can access every single page across the portal (including all current and future asset sections).
                     </p>
                   </button>
                 )
-              })}
+              })()}
+
+              {/* Tile 2: Specific Pages (Custom Granular Scope) */}
+              {(() => {
+                const selected = form.accessScope === "SPECIFIC_PAGES"
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setScope("SPECIFIC_PAGES")}
+                    className={cn(
+                      "relative group flex flex-col items-start gap-3 rounded-2xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer overflow-hidden select-none border-2",
+                      selected
+                        ? "border-[#4472C4] bg-gradient-to-br from-[#4472C4]/12 via-[#4472C4]/5 to-background shadow-[0_0_20px_rgba(68,114,196,0.18)] ring-1 ring-[#4472C4]/30 dark:from-[#4472C4]/25 dark:border-blue-400"
+                        : "border-border/80 bg-card hover:border-[#4472C4]/40 hover:bg-[#4472C4]/[0.03] shadow-xs"
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+                            selected
+                              ? "bg-[#4472C4] text-white shadow-xs"
+                              : "bg-[#4472C4]/10 text-[#4472C4] dark:text-blue-400 group-hover:bg-[#4472C4]/20"
+                          )}
+                        >
+                          <SlidersHorizontal className="h-4.5 w-4.5" />
+                        </div>
+                        <div>
+                          <span className="text-[15px] font-bold text-foreground tracking-tight block">
+                            Specific Pages
+                          </span>
+                          <span className="text-[11px] font-medium text-[#4472C4] dark:text-blue-400">
+                            Custom Granular Scope
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors",
+                            selected
+                              ? "bg-[#4472C4]/15 border-[#4472C4]/40 text-[#4472C4] dark:text-blue-400"
+                              : "bg-muted text-muted-foreground border-border/60"
+                          )}
+                        >
+                          Granular
+                        </Badge>
+                        <div
+                          className={cn(
+                            "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all",
+                            selected
+                              ? "border-[#4472C4] bg-[#4472C4] text-white"
+                              : "border-muted-foreground/35 bg-transparent"
+                          )}
+                        >
+                          {selected && <div className="h-2 w-2 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-0.5">
+                      Manually select which individual pages this user can access and configure distinct permissions per page.
+                    </p>
+                  </button>
+                )
+              })()}
             </div>
           </div>
 
-          {/* Step 3: Specific Pages Multi-Select (shown only when Specific Pages chosen) */}
+          {/* Step 3: Specific Pages with Integrated Per-Page Permission Accordions */}
           {form.accessScope === "SPECIFIC_PAGES" && (
             <>
               <Separator className="bg-border/50" />
@@ -827,39 +1072,190 @@ export function TabUserAccess() {
                       3
                     </div>
                     <h4 className="text-sm font-bold text-foreground">
-                      Select Pages
+                      Select Pages & Permission Controls
                       {form.selectedPages.length > 0 && (
                         <span className="ml-2 text-xs font-normal text-muted-foreground">
-                          ({form.selectedPages.length}/{PAGES.length})
+                          ({form.selectedPages.length}/{PAGES.length} pages selected)
                         </span>
                       )}
                     </h4>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAllPages}>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs cursor-pointer" onClick={selectAllPages}>
                       <CheckSquare2 className="mr-1 h-3.5 w-3.5" /> All
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={clearPages}>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs cursor-pointer" onClick={clearPages}>
                       <Square className="mr-1 h-3.5 w-3.5" /> Clear
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+
+                {/* Page Rows List with Accordions */}
+                <div className="flex flex-col gap-2">
                   {PAGES.map((page) => {
-                    const checked = form.selectedPages.includes(page.href)
+                    const isChecked = form.selectedPages.includes(page.href)
+                    const isOpen = isChecked && (openAccordions[page.href] ?? true)
+                    const pagePerms = form.pagePermissions?.[page.href] || []
+                    const PageIcon = page.icon
+
                     return (
-                      <label
+                      <div
                         key={page.href}
                         className={cn(
-                          "flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-all",
-                          checked
-                            ? "border-primary/60 bg-primary/10 ring-1 ring-primary/25"
-                            : "border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/40"
+                          "rounded-xl border transition-all overflow-hidden",
+                          isChecked
+                            ? "border-[#548235]/40 bg-[#548235]/[0.03] dark:border-[#548235]/60 dark:bg-[#548235]/[0.06] shadow-2xs"
+                            : "border-border/60 bg-muted/15 hover:border-primary/30 hover:bg-muted/30"
                         )}
                       >
-                        <Checkbox checked={checked} onCheckedChange={() => togglePage(page.href)} />
-                        <span className="text-sm font-medium text-foreground">{page.title}</span>
-                      </label>
+                        {/* Page Row Header */}
+                        <div
+                          onClick={() => togglePage(page.href)}
+                          className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={() => togglePage(page.href)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="cursor-pointer"
+                            />
+                            {PageIcon && (
+                              <div
+                                className={cn(
+                                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border",
+                                  isChecked
+                                    ? "bg-[#548235]/15 border-[#548235]/30 text-[#548235] dark:text-[#7ee249]"
+                                    : "bg-background border-border/60 text-muted-foreground"
+                                )}
+                              >
+                                <PageIcon className="h-3.5 w-3.5" />
+                              </div>
+                            )}
+                            <span
+                              className={cn(
+                                "text-sm font-semibold truncate",
+                                isChecked ? "text-foreground" : "text-muted-foreground"
+                              )}
+                            >
+                              {page.title}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {isChecked && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] px-2 py-0.5 h-5 font-semibold",
+                                  pagePerms.length > 0
+                                    ? "bg-[#548235]/15 border-[#548235]/30 text-[#548235] dark:text-[#7ee249]"
+                                    : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
+                                )}
+                              >
+                                {pagePerms.length > 0
+                                  ? `${pagePerms.length} Permission${pagePerms.length === 1 ? "" : "s"}`
+                                  : "No Permissions Selected"}
+                              </Badge>
+                            )}
+
+                            {isChecked && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={(e) => toggleAccordion(page.href, e)}
+                                className="h-6 w-6 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                              >
+                                <ChevronDown
+                                  className={cn(
+                                    "h-3.5 w-3.5 transition-transform duration-200",
+                                    isOpen && "rotate-180"
+                                  )}
+                                />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Accordion Content: Compact Page-Specific Permission Pills (Saves Vertical Space) */}
+                        {isOpen && isChecked && (
+                          <div className="border-t border-border/50 bg-background/70 px-4 py-2.5 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Permissions for {page.title}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setAllPermsForPage(page.href)}
+                                  className="text-[10px] font-semibold text-primary hover:underline px-1 py-0.5 cursor-pointer"
+                                >
+                                  All
+                                </button>
+                                <span className="text-muted-foreground/40 text-[10px]">•</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setViewOnlyForPage(page.href)}
+                                  className="text-[10px] font-semibold text-muted-foreground hover:text-foreground px-1 py-0.5 cursor-pointer"
+                                >
+                                  View Only
+                                </button>
+                                <span className="text-muted-foreground/40 text-[10px]">•</span>
+                                <button
+                                  type="button"
+                                  onClick={() => clearPermsForPage(page.href)}
+                                  className="text-[10px] font-semibold text-destructive hover:underline px-1 py-0.5 cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Compact Pills Layout - Spanning 100% full width with zero empty space */}
+                            <div className="flex flex-wrap gap-1.5 pt-0.5 w-full">
+                              {PERMISSION_DEFINITIONS.map((perm) => {
+                                const hasPerm = pagePerms.includes(perm.key)
+                                return (
+                                  <button
+                                    key={perm.key}
+                                    type="button"
+                                    onClick={() => togglePagePermission(page.href, perm.key)}
+                                    title={perm.description}
+                                    className={cn(
+                                      "flex-1 min-w-fit inline-flex items-center justify-center gap-1.5 px-2.5 py-0.5 h-6.5 rounded-md text-[11px] font-medium transition-all cursor-pointer border select-none whitespace-nowrap",
+                                      hasPerm
+                                        ? perm.dangerous
+                                          ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-semibold shadow-2xs"
+                                          : "bg-[#548235]/15 border-[#548235]/40 text-[#548235] dark:text-[#7ee249] font-semibold shadow-2xs"
+                                        : "bg-background/90 border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    )}
+                                  >
+                                    <div
+                                      className={cn(
+                                        "flex h-3 w-3 shrink-0 items-center justify-center rounded-[2px] border transition-colors",
+                                        hasPerm
+                                          ? perm.dangerous
+                                            ? "border-amber-600 bg-amber-600 text-white"
+                                            : "border-[#548235] bg-[#548235] text-white"
+                                          : "border-muted-foreground/40 bg-transparent"
+                                      )}
+                                    >
+                                      {hasPerm && <Check className="h-2 w-2 stroke-[3]" />}
+                                    </div>
+                                    <span className="truncate">{perm.label}</span>
+                                    {perm.dangerous && (
+                                      <span className="text-[8px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0">
+                                        Risk
+                                      </span>
+                                    )}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
@@ -867,82 +1263,79 @@ export function TabUserAccess() {
             </>
           )}
 
-          <Separator className="bg-border/50" />
-
-          {/* Step 4: Permission Controls */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
-                  {form.accessScope === "SPECIFIC_PAGES" ? "4" : "3"}
-                </div>
-                <h4 className="text-sm font-bold text-foreground">
-                  Permission Controls
-                  {form.selectedPermissions.length > 0 && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      ({form.selectedPermissions.length}/{PERMISSION_DEFINITIONS.length})
-                    </span>
-                  )}
-                </h4>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAllPerms}>
-                  <CheckSquare2 className="mr-1 h-3.5 w-3.5" /> All
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={clearPerms}>
-                  <Square className="mr-1 h-3.5 w-3.5" /> Clear
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {PERMISSION_DEFINITIONS.map((perm) => {
-                const checked = form.selectedPermissions.includes(perm.key)
-                return (
-                  <label
-                    key={perm.key}
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all",
-                      checked
-                        ? perm.dangerous
-                          ? "border-amber-500/60 bg-amber-500/10 ring-1 ring-amber-400/30"
-                          : "border-primary/60 bg-primary/10 ring-1 ring-primary/25"
-                        : perm.dangerous
-                        ? "border-amber-400/25 bg-amber-500/[0.02] hover:border-amber-400/40 hover:bg-amber-500/5"
-                        : "border-border/60 bg-muted/20 hover:border-primary/30 hover:bg-muted/40"
-                    )}
-                  >
-                    <Checkbox
-                      className="mt-0.5"
-                      checked={checked}
-                      onCheckedChange={() => togglePermission(perm.key)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-foreground">{perm.label}</span>
-                        {perm.dangerous && (
-                          <Badge
-                            variant="outline"
-                            className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] px-1.5 py-0 h-4 gap-1 font-bold"
-                          >
-                            <AlertTriangle className="h-2.5 w-2.5" /> HIGH RISK
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        {perm.description}
-                      </p>
-                      {perm.dangerous && perm.dangerNote && checked && (
-                        <p className="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
-                          ⚠ {perm.dangerNote}
-                        </p>
-                      )}
+          {/* Step 3 (when ALL_PAGES): Global Permission Controls with Space-Saving Compact Pills */}
+          {form.accessScope === "ALL_PAGES" && (
+            <>
+              <Separator className="bg-border/50" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                      3
                     </div>
-                  </label>
-                )
-              })}
-            </div>
-          </div>
+                    <h4 className="text-sm font-bold text-foreground">
+                      Global Permission Controls
+                      {form.selectedPermissions.length > 0 && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          ({form.selectedPermissions.length}/{PERMISSION_DEFINITIONS.length} selected)
+                        </span>
+                      )}
+                    </h4>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs cursor-pointer" onClick={selectAllPerms}>
+                      <CheckSquare2 className="mr-1 h-3.5 w-3.5" /> All
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs cursor-pointer" onClick={clearPerms}>
+                      <Square className="mr-1 h-3.5 w-3.5" /> Clear
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Compact Full-Width Pills for All Pages permissions (No empty space on right) */}
+                <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-border/70 bg-muted/20 w-full">
+                  {PERMISSION_DEFINITIONS.map((perm) => {
+                    const checked = form.selectedPermissions.includes(perm.key)
+                    return (
+                      <button
+                        key={perm.key}
+                        type="button"
+                        onClick={() => togglePermission(perm.key)}
+                        title={perm.description}
+                        className={cn(
+                          "flex-1 min-w-fit inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border select-none whitespace-nowrap",
+                          checked
+                            ? perm.dangerous
+                              ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-semibold shadow-2xs"
+                              : "bg-[#548235]/15 border-[#548235]/40 text-[#548235] dark:text-[#7ee249] font-semibold shadow-2xs"
+                            : "bg-background border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
+                            checked
+                              ? perm.dangerous
+                                ? "border-amber-600 bg-amber-600 text-white"
+                                : "border-[#548235] bg-[#548235] text-white"
+                              : "border-muted-foreground/40 bg-transparent"
+                          )}
+                        >
+                          {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                        </div>
+                        <span className="truncate">{perm.label}</span>
+                        {perm.dangerous && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0">
+                            Risk
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator className="bg-border/50" />
 
@@ -982,9 +1375,13 @@ export function TabUserAccess() {
               <div className="flex items-center justify-between rounded-lg bg-background/60 px-3 py-2 border border-border/40">
                 <span className="text-muted-foreground text-xs font-medium">Permissions:</span>
                 <span className="font-semibold text-foreground">
-                  {form.selectedPermissions.length === 0
+                  {form.accessScope === "ALL_PAGES"
+                    ? form.selectedPermissions.length === 0
+                      ? "None selected"
+                      : `${form.selectedPermissions.length} of ${PERMISSION_DEFINITIONS.length} active`
+                    : form.selectedPages.length === 0
                     ? "None selected"
-                    : `${form.selectedPermissions.length} of ${PERMISSION_DEFINITIONS.length} active`}
+                    : `${Object.values(form.pagePermissions || {}).reduce((acc, curr) => acc + curr.length, 0)} permissions across ${form.selectedPages.length} page(s)`}
                 </span>
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿// Complete types for the User Access Management system
+// Complete types for the User Access Management system
 // Structured to connect to any backend (Supabase, Firebase, REST API, etc.)
 
 export type Permission =
@@ -29,6 +29,7 @@ export interface ManagedUser {
   accessScope: AccessScope
   pages: string[]
   permissions: Permission[]
+  pagePermissions?: Record<string, Permission[]>
   status: UserStatus
   invitedAt: string
   lastActiveAt?: string
@@ -61,5 +62,6 @@ export interface AccessFormState {
   accessScope: AccessScope
   selectedPages: string[]
   selectedPermissions: Permission[]
+  pagePermissions?: Record<string, Permission[]>
   editingUserId?: string
 }

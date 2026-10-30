@@ -26,10 +26,14 @@ export function isSuperAdmin(user: Pick<ManagedUser, 'role'>): boolean {
 
 // Super Admin automatically passes every permission check
 export function hasPermission(
-  user: Pick<ManagedUser, 'role' | 'permissions'>,
-  permission: Permission
+  user: Pick<ManagedUser, 'role' | 'permissions'> & { pagePermissions?: Record<string, Permission[]> },
+  permission: Permission,
+  pageHref?: string
 ): boolean {
   if (isSuperAdmin(user)) return true
+  if (pageHref && user.pagePermissions && user.pagePermissions[pageHref]) {
+    return user.pagePermissions[pageHref].includes(permission)
+  }
   return user.permissions.includes(permission)
 }
 

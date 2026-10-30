@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { BrandLogo } from "./brand-logo"
 import { BrandBookTile } from "./brand-book-tile"
 import { AboutPortalButton } from "./about-portal-button"
+import { SidebarSolidIcon } from "./sidebar-solid-icon"
 import { cn } from "@/lib/utils"
 import { navigationConfig } from "@/config/navigation"
 
@@ -148,30 +149,40 @@ export function Sidebar({ isMobile = false, onNavigate }: SidebarProps) {
                   onNavigate?.()
                 }}
                 className={cn(
-                  "group relative flex items-center h-10 w-full px-1.5 rounded-xl text-sm transition-all duration-200 select-none overflow-hidden",
+                  "group relative flex items-center h-10 w-full px-1.5 rounded-xl text-sm transition-all duration-200 select-none",
+                  isOpen ? "overflow-hidden" : "overflow-visible",
                   isActive
-                    ? cn(
-                        // White Theme: Clean Branding Green fill, text & border
-                        "bg-[#548235]/15 text-[#548235] font-semibold border border-[#548235]/30 shadow-xs",
-                        // Black Theme (Pure Black & Navy): High-contrast luminous Green highlight
-                        "dark:bg-[#548235]/30 dark:text-[#7ee249] dark:border-[#548235]/80 dark:shadow-[0_0_15px_rgba(84,130,53,0.35)]"
-                      )
+                    ? isOpen
+                      ? "bg-[#548235]/12 text-[#548235] font-semibold dark:bg-[#548235]/25 dark:text-[#7ee249] border border-transparent"
+                      : "bg-transparent text-[#548235] font-semibold dark:text-[#7ee249] border border-transparent shadow-none"
                     : cn(
                         // Base idle state
                         "border border-transparent text-sidebar-foreground/80",
                         // Modern subtle hover effect
-                        "hover:bg-[#548235]/[0.08] hover:text-[#548235] hover:border-[#548235]/20 hover:shadow-2xs",
-                        "dark:hover:bg-[#548235]/15 dark:hover:text-[#7ee249] dark:hover:border-[#548235]/30 dark:hover:shadow-none"
+                        isOpen
+                          ? "hover:bg-[#548235]/[0.08] hover:text-[#548235] hover:border-[#548235]/20 hover:shadow-2xs dark:hover:bg-[#548235]/15 dark:hover:text-[#7ee249] dark:hover:border-[#548235]/30 dark:hover:shadow-none"
+                          : "hover:text-[#548235] dark:hover:text-[#7ee249]"
                       )
                 )}
               >
                 {/* Fixed Icon slot (always perfectly positioned at left, never shifts) */}
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-                  <Icon
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200",
+                    isActive && !isOpen && "bg-[#548235]/12 dark:bg-[#548235]/22 shadow-[0_0_16px_rgba(84,130,53,0.35)] dark:shadow-[0_0_18px_rgba(126,226,73,0.45)]"
+                  )}
+                >
+                  <SidebarSolidIcon
+                    href={item.href}
+                    icon={Icon}
+                    isActive={isActive}
                     className={cn(
                       "h-[18px] w-[18px] shrink-0 transition-all duration-200 group-hover:scale-110",
                       isActive
-                        ? "text-[#548235] dark:text-[#7ee249]"
+                        ? cn(
+                            "text-[#548235] dark:text-[#7ee249]",
+                            !isOpen && "drop-shadow-[0_0_6px_rgba(84,130,53,0.5)] dark:drop-shadow-[0_0_8px_rgba(126,226,73,0.65)]"
+                          )
                         : "text-sidebar-foreground/75 group-hover:text-[#548235] dark:group-hover:text-[#7ee249]"
                     )}
                   />

@@ -136,7 +136,7 @@ export function TabActiveUsers() {
       )}
 
       <div className="flex flex-col gap-6 p-6">
-        {/* Stat Cards */}
+        {/* Compact Stat Cards (Horizontal layout with text in front of icon to minimize vertical space) */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "Total Users", value: stats.total, icon: Users, color: "text-primary", bg: "bg-primary/10" },
@@ -144,12 +144,21 @@ export function TabActiveUsers() {
             { label: "External", value: stats.external, icon: Globe, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
             { label: "Super Admins", value: stats.superAdmin, icon: Shield, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
           ].map((s) => (
-            <div key={s.label} className="flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/20 p-4">
-              <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", s.bg)}>
-                <s.icon className={cn("h-4 w-4", s.color)} />
+            <div
+              key={s.label}
+              className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 transition-colors hover:bg-muted/30 shadow-2xs"
+            >
+              <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", s.bg)}>
+                <s.icon className={cn("h-4.5 w-4.5", s.color)} />
               </div>
-              <div className="text-2xl font-bold text-foreground">{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-lg sm:text-xl font-bold text-foreground leading-tight tracking-tight">
+                  {s.value}
+                </span>
+                <span className="text-xs text-muted-foreground truncate font-medium">
+                  {s.label}
+                </span>
+              </div>
             </div>
           ))}
         </div>

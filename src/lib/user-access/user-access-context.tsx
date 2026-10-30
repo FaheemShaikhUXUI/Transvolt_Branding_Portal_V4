@@ -81,6 +81,7 @@ export function UserAccessProvider({ children }: { children: React.ReactNode }) 
       accessScope: form.accessScope,
       pages: form.accessScope === 'ALL_PAGES' ? [] : form.selectedPages,
       permissions: form.selectedPermissions,
+      pagePermissions: form.pagePermissions || {},
       createdBy,
     })
     setUsers((prev) => [...prev, newUser])
@@ -91,6 +92,7 @@ export function UserAccessProvider({ children }: { children: React.ReactNode }) 
       accessScope: form.accessScope,
       pages: form.accessScope === 'ALL_PAGES' ? [] : form.selectedPages,
       permissions: form.selectedPermissions,
+      pagePermissions: form.pagePermissions || {},
     })
     setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)))
   }

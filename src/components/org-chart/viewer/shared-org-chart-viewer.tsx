@@ -2,11 +2,12 @@
 
 import * as React from "react"
 import { OrganizationChart } from "@/lib/org-chart/types"
-import { OrgChartCanvas } from "@/components/org-chart/builder/canvas/org-chart-canvas"
+import { OrgChartPreviewCanvas } from "@/components/org-chart/builder-v2/canvas-v2/org-chart-preview-canvas"
 import {
   exportOrgChartToPrintPdf,
   exportOrgChartToPng,
   exportOrgChartToSvg,
+  formatDateDMY,
 } from "@/lib/org-chart/export-utils"
 import { Clock, Download, ShieldAlert, Building2, MapPin, Calendar, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -82,45 +83,35 @@ export function SharedOrgChartViewer({ chart, isExpired, remainingMs }: SharedVi
         </span>
       </div>
 
-      {/* 2. Viewer Header */}
-      <header className="h-16 border-b border-border/80 bg-card/60 backdrop-blur-md px-6 flex items-center justify-between gap-4 shrink-0 select-none">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#548235]/10 text-[#548235]">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-bold text-foreground truncate">
-                {chart.title}
-              </h1>
-              <Badge variant="outline" className="text-[10px] font-bold border-emerald-500/40 text-emerald-600 bg-emerald-500/10">
-                {chart.version}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-[#548235]" />
-                {chart.siteLocation}
-              </span>
-              <span>&bull;</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                Effective: <strong>{chart.effectiveFrom}</strong>
-              </span>
-            </div>
-          </div>
+      {/* 2. Executive Top Header (Solid Black Banner) */}
+      <header className="h-[60px] bg-black text-white px-8 flex items-center justify-between gap-4 shrink-0 select-none z-20">
+        <div className="flex flex-col justify-center min-w-0">
+          <h1 className="text-base font-bold text-white tracking-tight leading-tight truncate">
+            {chart.siteName || chart.title || "Name of the Organization Chart"}
+          </h1>
+          <p className="text-[11px] text-zinc-300 font-normal leading-tight mt-0.5">
+            Organization Structure
+          </p>
         </div>
 
-        {/* Export action */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right side: Transvolt Logo + Export action */}
+        <div className="flex items-center gap-6 shrink-0">
+          <div className="flex items-center">
+            <img
+              src="/logos/SVG/Logo_White.svg"
+              alt="Transvolt"
+              className="h-6 w-auto object-contain"
+            />
+          </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
-                className="h-8 text-xs font-bold gap-1.5 bg-[#548235] hover:bg-[#466f2c] text-white cursor-pointer"
+                className="h-8 text-xs font-bold gap-1.5 bg-white hover:bg-zinc-100 text-black border-0 cursor-pointer shadow-xs"
               >
-                <Download className="h-3.5 w-3.5" />
-                <span>Export Chart</span>
+                <Download className="h-3.5 w-3.5 text-[#548235]" />
+                <span>Export</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -138,28 +129,37 @@ export function SharedOrgChartViewer({ chart, isExpired, remainingMs }: SharedVi
         </div>
       </header>
 
+      {/* Sub-header Date Bar */}
+      <div className="w-full bg-white dark:bg-zinc-950 px-8 py-1 border-b border-border/40 flex justify-end text-[10px] text-zinc-500 font-medium shrink-0">
+        <span>Date Created: {formatDateDMY(chart.createdAt)} | Date Updated: {formatDateDMY(chart.updatedAt)}</span>
+      </div>
+
       {/* 3. Read-Only Canvas */}
       <div className="flex-1 w-full h-full relative overflow-hidden">
-        <OrgChartCanvas
+        <OrgChartPreviewCanvas
           nodes={chart.nodes}
           connections={chart.connections}
           boundaries={chart.boundaries}
+          annotations={chart.annotations}
           footer={chart.footer}
-          selectedNodeId={null}
-          selectedBoundaryId={null}
-          selectedConnectionId={null}
-          canUndo={false}
-          canRedo={false}
-          onSelectNode={() => {}}
-          onSelectBoundary={() => {}}
-          onSelectConnection={() => {}}
+          chartTitle={chart.title}
+          siteName={chart.siteName}
+          companyName={chart.companyName}
+          siteLocation={chart.siteLocation}
+          projectManager={chart.projectManager}
+          effectiveDate={chart.effectiveFrom}
+          activeTool="select"
+          selectedElement={{ type: null, id: null }}
+          pages={chart.pages}
+          activePageIndex={chart.activePageIndex ?? 0}
+          onSelectElement={() => {}}
           onUpdateNodePosition={() => {}}
-          onUpdateBoundary={() => {}}
-          onDeleteBoundary={() => {}}
-          onUpdateFooter={() => {}}
-          onAutoArrange={() => {}}
-          onUndo={() => {}}
-          onRedo={() => {}}
+          onUpdateBoundaryPosition={() => {}}
+          onUpdateAnnotationPosition={() => {}}
+          onUpdateAnnotation={() => {}}
+          onConnectNodes={() => {}}
+          onToggleNodeCollapse={() => {}}
+          onAddAnnotationAt={() => {}}
         />
       </div>
     </div>

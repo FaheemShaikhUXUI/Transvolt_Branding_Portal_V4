@@ -56,8 +56,8 @@ export function autoLayoutOrgChart(
 
   while (curr) {
     topChain.push(curr)
-    const kids = childrenMap.get(curr.id) || []
-    curr = kids.find((k) => k.type === "EXECUTIVE" || k.type === "MANAGEMENT")
+    const kids: OrgNode[] = childrenMap.get(curr.id) || []
+    curr = kids.find((k: OrgNode) => k.type === "EXECUTIVE" || k.type === "MANAGEMENT")
   }
 
   // Place the top vertical chain
@@ -149,6 +149,42 @@ export function autoLayoutOrgChart(
         }
         staffY += (staff.height || 64) + 16
       })
+    })
+  }
+
+  // Fallback: Place any remaining nodes (e.g., direct employee children of executive/management or unassigned nodes)
+  const placedIds = new Set<string>()
+  topChain.forEach((n) => placedIds.add(n.id))
+  if (pmNode) placedIds.add(pmNode.id)
+  activeTopDepts.forEach((d) => placedIds.add(d.id))
+  deptsToLayout.forEach((d) => {
+    placedIds.add(d.id)
+    updatedNodes
+      .filter((n) => n.parentId === d.id || (n.metadata.department && n.metadata.department === d.metadata.department))
+      .forEach((s) => placedIds.add(s.id))
+  })
+
+  const remainingNodes = updatedNodes.filter((n) => !placedIds.has(n.id))
+  if (remainingNodes.length > 0) {
+    let unplacedX = 60
+    let unplacedY = currentY + 120
+    remainingNodes.forEach((node) => {
+      if (node.parentId) {
+        const parent = updatedNodes.find((p) => p.id === node.parentId)
+        if (parent && parent.position) {
+          node.position = {
+            x: parent.position.x,
+            y: parent.position.y + (parent.height || 60) + 70,
+          }
+          return
+        }
+      }
+      node.position = { x: unplacedX, y: unplacedY }
+      unplacedX += (node.width || 180) + 30
+      if (unplacedX > 1300) {
+        unplacedX = 60
+        unplacedY += (node.height || 60) + 30
+      }
     })
   }
 

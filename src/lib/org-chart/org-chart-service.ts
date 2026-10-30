@@ -32,12 +32,66 @@ export function computeChartStatus(
   return "CURRENT"
 }
 
+function sanitizeChart(chart: OrganizationChart): OrganizationChart {
+  if (!chart) return chart
+
+  const sanitizedNodes = (chart.nodes || []).map((node, idx) => {
+    let x = typeof node.position?.x === "number" ? node.position.x : 480 + (idx % 4) * 210
+    let y = typeof node.position?.y === "number" ? node.position.y : 80 + Math.floor(idx / 4) * 110
+    if (x <= 10 && y <= 10) {
+      x = 480 + (idx % 4) * 210
+      y = 80 + Math.floor(idx / 4) * 110
+    }
+    return {
+      ...node,
+      position: { x, y },
+      width: node.width || 180,
+      height: node.height || 56,
+    }
+  })
+
+  const sanitizedPages = (chart.pages || []).map((page) => {
+    const pageNodes = (page.nodes || []).map((node, idx) => {
+      let x = typeof node.position?.x === "number" ? node.position.x : 480 + (idx % 4) * 210
+      let y = typeof node.position?.y === "number" ? node.position.y : 80 + Math.floor(idx / 4) * 110
+      if (x <= 10 && y <= 10) {
+        x = 480 + (idx % 4) * 210
+        y = 80 + Math.floor(idx / 4) * 110
+      }
+      return {
+        ...node,
+        position: { x, y },
+        width: node.width || 180,
+        height: node.height || 56,
+      }
+    })
+    return {
+      ...page,
+      nodes: pageNodes,
+      connections: page.connections || [],
+      boundaries: page.boundaries || [],
+      annotations: page.annotations || [],
+      shapes: page.shapes || [],
+    }
+  })
+
+  return {
+    ...chart,
+    nodes: sanitizedNodes,
+    pages: sanitizedPages.length > 0 ? sanitizedPages : undefined,
+    boundaries: chart.boundaries || [],
+    connections: chart.connections || [],
+    annotations: chart.annotations || [],
+    shapes: chart.shapes || [],
+  }
+}
+
 export class OrgChartService {
   private memoryCharts: OrganizationChart[] = JSON.parse(JSON.stringify(INITIAL_ORG_CHARTS))
 
   private getStoredCharts(): OrganizationChart[] {
     if (typeof window === "undefined") {
-      return this.memoryCharts
+      return this.memoryCharts.map(sanitizeChart)
     }
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
@@ -45,11 +99,12 @@ export class OrgChartService {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_ORG_CHARTS))
         } catch {}
-        return this.memoryCharts
+        return this.memoryCharts.map(sanitizeChart)
       }
-      return JSON.parse(stored)
+      const parsed: OrganizationChart[] = JSON.parse(stored)
+      return parsed.map(sanitizeChart)
     } catch {
-      return this.memoryCharts
+      return this.memoryCharts.map(sanitizeChart)
     }
   }
 
@@ -101,10 +156,14 @@ export class OrgChartService {
     })
   }
 
-  public async getChartById(id: string): Promise<OrganizationChart | null> {
+  public getChartByIdSync(id: string): OrganizationChart | null {
     const list = this.getStoredCharts()
     const found = list.find((c) => c.id === id)
-    return found || null
+    return found ? JSON.parse(JSON.stringify(found)) : null
+  }
+
+  public async getChartById(id: string): Promise<OrganizationChart | null> {
+    return this.getChartByIdSync(id)
   }
 
   public async saveChart(chart: OrganizationChart): Promise<OrganizationChart> {

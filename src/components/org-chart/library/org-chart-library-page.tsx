@@ -14,8 +14,11 @@ import { ChartCardItem } from "./chart-card-item"
 import { ShareChartModal } from "./share-chart-modal"
 import { DuplicateChartModal } from "./duplicate-chart-modal"
 import { VersionHistoryModal } from "./version-history-modal"
+import { CreateChartV2Modal } from "./create-chart-v2-modal"
+import Link from "next/link"
 import {
   Plus,
+  ArrowLeft,
   Search,
   Filter,
   LayoutGrid,
@@ -38,7 +41,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface LibraryPageProps {
-  onOpenBuilder: (chart?: OrganizationChart, version?: "v1" | "v2") => void
+  onOpenBuilder: (chart?: OrganizationChart) => void
 }
 
 export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
@@ -59,6 +62,7 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
   const [shareChart, setShareChart] = React.useState<OrganizationChart | null>(null)
   const [duplicateChart, setDuplicateChart] = React.useState<OrganizationChart | null>(null)
   const [historySiteChart, setHistorySiteChart] = React.useState<OrganizationChart | null>(null)
+  const [createV2ModalOpen, setCreateV2ModalOpen] = React.useState(false)
 
   const loadCharts = React.useCallback(async () => {
     setLoading(true)
@@ -115,7 +119,8 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
   }, [charts, historySiteChart])
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full text-left">
+    <div className="flex flex-col gap-6 w-full text-left animate-in fade-in-50">
+
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
         <div>
@@ -133,27 +138,15 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Create V1 Button */}
+          {/* Primary Create Button: Directly opens Creating tool */}
           <Button
             type="button"
-            variant="outline"
-            onClick={() => onOpenBuilder(undefined, "v1")}
-            className="h-10 px-3.5 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-muted"
-            title="Create using Classic Canvas Editor V1"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Create Chart V1</span>
-          </Button>
-
-          {/* Primary Create V2 Button */}
-          <Button
-            type="button"
-            onClick={() => onOpenBuilder(undefined, "v2")}
+            onClick={() => onOpenBuilder(undefined)}
             className="h-10 px-4 text-xs font-bold gap-2 bg-[#548235] hover:bg-[#466f2c] text-white shadow-sm cursor-pointer"
-            title="Create using New Live Preview & Unified Form Studio V2"
+            title="Create Organization Chart"
           >
             <Plus className="h-4 w-4" />
-            <span>Create Organization Chart V2</span>
+            <span>Create Organization Chart</span>
           </Button>
         </div>
       </div>
@@ -283,7 +276,7 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
               key={item.id}
               chart={item}
               index={idx + 1}
-              onOpen={(c, v) => onOpenBuilder(c, v || "v2")}
+              onOpen={(c) => onOpenBuilder(c)}
               onDuplicate={(c) => setDuplicateChart(c)}
               onShare={(c) => setShareChart(c)}
               onExportPdf={(c) => exportOrgChartToPrintPdf(c)}
@@ -325,7 +318,7 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
                       <td className="p-3">
                         <button
                           type="button"
-                          onClick={() => onOpenBuilder(item, "v2")}
+                          onClick={() => onOpenBuilder(item)}
                           className="font-bold text-foreground hover:text-primary transition-colors text-left"
                         >
                           {item.title}
@@ -361,9 +354,9 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => onOpenBuilder(item, "v2")}
+                            onClick={() => onOpenBuilder(item)}
                             className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
-                            title="Open & Edit (V2)"
+                            title="Open & Edit"
                           >
                             <Edit className="h-3.5 w-3.5" />
                           </Button>
@@ -449,6 +442,16 @@ export function OrgChartLibraryPage({ onOpenBuilder }: LibraryPageProps) {
         onOpenChart={(c) => onOpenBuilder(c)}
         onDuplicateChart={(c) => setDuplicateChart(c)}
         onExportChart={(c) => exportOrgChartToPrintPdf(c)}
+      />
+
+      <CreateChartV2Modal
+        open={createV2ModalOpen}
+        onOpenChange={setCreateV2ModalOpen}
+        onConfirm={async (newChart) => {
+          await orgChartService.saveChart(newChart)
+          loadCharts()
+          onOpenBuilder(newChart)
+        }}
       />
     </div>
   )

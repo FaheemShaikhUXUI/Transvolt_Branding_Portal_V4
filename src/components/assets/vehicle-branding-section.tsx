@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useAssets } from "@/lib/assets/assets-context"
 import { VehicleBrandingTile, VehicleVariantItem } from "./vehicle-branding-tile"
 import { AddVehicleBrandingModal } from "./add-vehicle-branding-modal"
+import { EditBrandingCategoryModal } from "./edit-branding-category-modal"
 import { toast } from "sonner"
 
 interface VehicleBrandingSectionProps {
@@ -186,11 +187,19 @@ export function VehicleBrandingSection({ searchQuery = "" }: VehicleBrandingSect
               </p>
             </div>
 
-            {/* Right Controls: Variant Count and + Add Variant to this group */}
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            {/* Right Controls: Variant Count, Edit Category, and + Add Variant */}
+            <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
               <span className="text-xs text-muted-foreground font-medium mr-1">
                 {group.variants.length} variant{group.variants.length === 1 ? "" : "s"}
               </span>
+
+              {/* Edit Full Category Button */}
+              <EditBrandingCategoryModal
+                type="vehicle"
+                companyName={group.companyName}
+                siteLocation={group.siteLocation}
+                variants={group.variants}
+              />
 
               {/* + Add Variant Button pre-filled with this group's Company and Site */}
               <AddVehicleBrandingModal

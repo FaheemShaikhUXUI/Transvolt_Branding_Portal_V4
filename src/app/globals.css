@@ -1023,4 +1023,111 @@ body.presentation-deck-open [data-vehicle-runner="true"],
 .animate-cat-slide-in {
   animation: catSlideInFromRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
-}
+}
+
+/* ==========================================================================
+   SIDEBAR SOLID ACTIVE ICONS (High-Contrast Solid Green with Clean Cutouts)
+   ========================================================================== */
+.sidebar-solid-icon {
+  fill: currentColor;
+}
+
+/* 1. Photos & Videos (Image): Solid frame with crisp sun & mountain cutouts */
+.sidebar-solid-icon.lucide-image rect {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-image circle {
+  fill: var(--sidebar, #ffffff);
+  stroke: var(--sidebar, #ffffff);
+}
+.sidebar-solid-icon.lucide-image path {
+  fill: var(--sidebar, #ffffff);
+  stroke: var(--sidebar, #ffffff);
+  stroke-width: 2.25;
+}
+
+/* 2. Presentation (MonitorPlay): Solid green screen with crisp play triangle cutout */
+.sidebar-solid-icon.lucide-monitor-play rect {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-monitor-play path:first-of-type {
+  fill: var(--sidebar, #ffffff);
+  stroke: var(--sidebar, #ffffff);
+}
+
+/* 3. Letterhead (FileText): Solid green sheet with cutout text lines & corner */
+.sidebar-solid-icon.lucide-file-text path:first-of-type {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-file-text path:not(:first-of-type) {
+  stroke: var(--sidebar, #ffffff);
+  stroke-width: 2.25;
+}
+
+/* 4. ID & Business Cards (IdCard): Solid badge with avatar cutout */
+.sidebar-solid-icon.lucide-id-card rect {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-id-card circle,
+.sidebar-solid-icon.lucide-id-card path {
+  stroke: var(--sidebar, #ffffff);
+  fill: var(--sidebar, #ffffff);
+}
+
+/* 5. Palette (Logo & Color): Solid palette with cutout paint wells */
+.sidebar-solid-icon.lucide-palette path {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-palette circle {
+  fill: var(--sidebar, #ffffff);
+  stroke: var(--sidebar, #ffffff);
+}
+
+/* 6. Vehicle Branding (Car): Solid car body with wheel cutouts */
+.sidebar-solid-icon.lucide-car path:first-of-type {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-car circle {
+  fill: var(--sidebar, #ffffff);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* 7. Printing Assets (Printer): Solid printer body with cutout paper tray */
+.sidebar-solid-icon.lucide-printer path {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-printer rect {
+  fill: var(--sidebar, #ffffff);
+  stroke: currentColor;
+}
+
+/* 8. Forms & Documents (ClipboardCheck): Solid board with crisp checkmark */
+.sidebar-solid-icon.lucide-clipboard-check rect,
+.sidebar-solid-icon.lucide-clipboard-check path:first-of-type {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-clipboard-check path:nth-of-type(2) {
+  fill: none;
+  stroke: var(--sidebar, #ffffff);
+  stroke-width: 2.5;
+}
+
+/* 9. Brand Philosophy (Compass): Solid compass with cutout needle */
+.sidebar-solid-icon.lucide-compass circle {
+  fill: currentColor;
+  stroke: currentColor;
+}
+.sidebar-solid-icon.lucide-compass path {
+  fill: var(--sidebar, #ffffff);
+  stroke: var(--sidebar, #ffffff);
+}
+
