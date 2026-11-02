@@ -236,6 +236,7 @@ export function SidebarSolidIcon({
       )
 
     case "/assets/forms-documents":
+    case "/how-to-test":
       return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
           <mask id="solid-clipboard-mask">
@@ -244,6 +245,22 @@ export function SidebarSolidIcon({
           </mask>
           <rect x="4" y="4" width="16" height="18" rx="2" fill="currentColor" mask="url(#solid-clipboard-mask)" />
           <rect x="8" y="2" width="8" height="4" rx="1" fill="currentColor" stroke="currentColor" strokeWidth="1" />
+        </svg>
+      )
+
+    case "/hiring-process":
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+          <rect width="20" height="14" x="2" y="7" rx="2.5" fill="currentColor" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      )
+
+    case "/requirement-document":
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" fill="currentColor" opacity="0.3" />
+          <path d="M6 2v20h14V2H6zm3 4h8v2H9V6zm0 4h8v2H9v-2zm0 4h5v2H9v-2z" fill="currentColor" />
         </svg>
       )
 

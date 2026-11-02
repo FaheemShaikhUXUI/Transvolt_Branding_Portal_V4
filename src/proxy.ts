@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 1. Allow internal Next.js assets, API routes, static public files, and login page
+  // 1. Allow internal Next.js assets, API routes, static public files, public candidate portal, and login page
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -12,6 +12,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/icons") ||
     pathname.startsWith("/cat-peek") ||
     pathname.startsWith("/share") ||
+    pathname.startsWith("/apply") ||
     pathname === "/login" ||
     pathname.includes(".")
   ) {

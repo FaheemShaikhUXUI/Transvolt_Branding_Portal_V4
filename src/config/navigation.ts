@@ -16,6 +16,8 @@ import {
   Sparkles,
   Music2,
   ClipboardCheck,
+  Briefcase,
+  ScrollText,
 } from "lucide-react"
 
 export const navigationConfig = [
@@ -80,11 +82,6 @@ export const navigationConfig = [
     icon: Zap,
   },
   {
-    title: "Eva Design Tool",
-    href: "/eva-design-tool",
-    icon: Sparkles,
-  },
-  {
     title: "Generate Audio",
     href: "/generate-audio",
     icon: Music2,
@@ -99,11 +96,12 @@ export const navigationConfig = [
     title: "Brand Philosophy",
     href: "/brand-philosophy",
     icon: Compass,
+    tag: "Hold",
   },
   {
-    title: "How to Test",
-    href: "/how-to-test",
-    icon: ClipboardCheck,
-    tag: "QA",
+    title: "Requirement Document",
+    href: "/requirement-document",
+    icon: ScrollText,
+    tag: "DOCS",
   },
 ]

@@ -141,6 +141,7 @@ function SeparateLetterheadCard({
   headerAsset, 
   footerAsset, 
   wordAsset,
+  pdfAsset,
   categoryTitle,
   titleNumber,
   titleName,
@@ -149,6 +150,7 @@ function SeparateLetterheadCard({
   headerAsset?: Asset; 
   footerAsset?: Asset; 
   wordAsset?: Asset; 
+  pdfAsset?: Asset;
   categoryTitle: string;
   titleNumber: string;
   titleName: string;
@@ -175,7 +177,7 @@ function SeparateLetterheadCard({
     const formatData = asset.formats[format]
     if (!formatData?.fileData) return
 
-    const mimeType = format === "WORD" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "image/png"
+    const mimeType = format === "WORD" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : format === "PDF" ? "application/pdf" : "image/png"
     const element = document.createElement("a")
     
     if (formatData.fileData.startsWith("data:")) {
@@ -224,6 +226,17 @@ function SeparateLetterheadCard({
       if (formatData?.fileData) {
         filesToZip.push({
           fileName: formatData.fileName || `Footer_${companyName.replace(/[^a-zA-Z0-9]+/g, "_")}.${fmt.toLowerCase()}`,
+          fileData: formatData.fileData,
+        })
+        incrementDownload()
+      }
+    }
+
+    if (pdfAsset) {
+      const formatData = pdfAsset.formats.PDF
+      if (formatData?.fileData) {
+        filesToZip.push({
+          fileName: formatData.fileName || `${companyName.replace(/[^a-zA-Z0-9]+/g, "_")}_Template.pdf`,
           fileData: formatData.fileData,
         })
         incrementDownload()
@@ -519,74 +532,143 @@ function SeparateLetterheadCard({
         </div>
       </div>
 
-      {/* Row: Word File Row (60px high) */}
-      <div className="bg-muted/25 hover:bg-muted/45 border border-border/70 rounded-xl p-3 px-4 h-[60px] flex items-center justify-between relative overflow-hidden group/word transition-colors">
-        <div className="flex items-center gap-3">
-          <div className="p-1 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center">
-            <WordIcon size={26} />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="font-bold text-xs text-foreground/90">Word File</span>
-            <span className="text-[10px] text-muted-foreground font-medium">Editable Template (.docx)</span>
-          </div>
-        </div>
+      {/* Row: Word File & PDF File */}
+      <div className={cn("grid gap-3", (wordAsset && pdfAsset) ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
+        {wordAsset && (
+          <div className="bg-muted/25 hover:bg-muted/45 border border-border/70 rounded-xl p-3 px-4 h-[60px] flex items-center justify-between relative overflow-hidden group/word transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-1 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center">
+                <WordIcon size={26} />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-xs text-foreground/90">Word File</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Editable Template (.docx)</span>
+              </div>
+            </div>
 
-        {/* Action Box */}
-        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm border border-border/80 rounded-lg p-1 shadow-sm">
-          {wordAsset && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation()
-                triggerFormatDownload(wordAsset, "WORD")
-              }}
-              className="p-1 rounded hover:bg-blue-500/15 hover:text-blue-600 text-muted-foreground transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold px-2"
-              title="Download Word Template"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Docx</span>
-            </button>
-          )}
-          {isSuperAdmin && wordAsset && (
-            <DropdownMenu>
-              <DropdownMenuTrigger render={
-                <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer">
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
-              } />
-              <DropdownMenuContent align="end" className="w-56 bg-card border border-border/80 p-2 rounded-xl shadow-2xl space-y-1">
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const input = document.createElement("input")
-                    input.type = "file"
-                    input.accept = ".doc,.docx"
-                    input.onchange = async (el) => {
-                      const file = (el.target as HTMLInputElement).files?.[0]
-                      if (file) {
-                        await replaceAssetFormat(wordAsset.id, "WORD", file)
-                        toast.success("Word file replaced successfully.")
-                      }
-                    }
-                    input.click()
-                  }}
-                  className="text-xs p-2 rounded-lg cursor-pointer hover:bg-muted"
-                >
-                  Replace Word File
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    deleteAsset(wordAsset.id)
-                    toast.error("Word asset deleted.")
-                  }}
-                  className="text-xs text-destructive hover:bg-destructive/10 p-2 rounded-lg cursor-pointer"
-                >
-                  Delete Word Asset
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+            <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm border border-border/80 rounded-lg p-1 shadow-sm">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  triggerFormatDownload(wordAsset, "WORD")
+                }}
+                className="p-1 rounded hover:bg-blue-500/15 hover:text-blue-600 text-muted-foreground transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold px-2"
+                title="Download Word Template"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Docx</span>
+              </button>
+              {isSuperAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={
+                    <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer">
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </button>
+                  } />
+                  <DropdownMenuContent align="end" className="w-56 bg-card border border-border/80 p-2 rounded-xl shadow-2xl space-y-1">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const input = document.createElement("input")
+                        input.type = "file"
+                        input.accept = ".doc,.docx"
+                        input.onchange = async (el) => {
+                          const file = (el.target as HTMLInputElement).files?.[0]
+                          if (file) {
+                            await replaceAssetFormat(wordAsset.id, "WORD", file)
+                            toast.success("Word file replaced successfully.")
+                          }
+                        }
+                        input.click()
+                      }}
+                      className="text-xs p-2 rounded-lg cursor-pointer hover:bg-muted"
+                    >
+                      Replace Word File
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteAsset(wordAsset.id)
+                        toast.error("Word asset deleted.")
+                      }}
+                      className="text-xs text-destructive hover:bg-destructive/10 p-2 rounded-lg cursor-pointer"
+                    >
+                      Delete Word Asset
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        )}
+
+        {pdfAsset && (
+          <div className="bg-muted/25 hover:bg-muted/45 border border-border/70 rounded-xl p-3 px-4 h-[60px] flex items-center justify-between relative overflow-hidden group/pdf transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-1 rounded-lg bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 flex items-center justify-center">
+                <PdfIcon size={26} />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-xs text-foreground/90">PDF File</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Print Template (.pdf)</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm border border-border/80 rounded-lg p-1 shadow-sm">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  triggerFormatDownload(pdfAsset, "PDF")
+                }}
+                className="p-1 rounded hover:bg-red-500/15 hover:text-red-600 text-muted-foreground transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold px-2"
+                title="Download PDF Template"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Pdf</span>
+              </button>
+              {isSuperAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={
+                    <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer">
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </button>
+                  } />
+                  <DropdownMenuContent align="end" className="w-56 bg-card border border-border/80 p-2 rounded-xl shadow-2xl space-y-1">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const input = document.createElement("input")
+                        input.type = "file"
+                        input.accept = ".pdf"
+                        input.onchange = async (el) => {
+                          const file = (el.target as HTMLInputElement).files?.[0]
+                          if (file) {
+                            await replaceAssetFormat(pdfAsset.id, "PDF", file)
+                            toast.success("PDF file replaced successfully.")
+                          }
+                        }
+                        input.click()
+                      }}
+                      className="text-xs p-2 rounded-lg cursor-pointer hover:bg-muted"
+                    >
+                      Replace PDF File
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteAsset(pdfAsset.id)
+                        toast.error("PDF asset deleted.")
+                      }}
+                      className="text-xs text-destructive hover:bg-destructive/10 p-2 rounded-lg cursor-pointer"
+                    >
+                      Delete PDF Asset
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dedicated High-Res Image Viewer Lightbox Modal */}
@@ -1297,6 +1379,7 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
                     headerAsset?: Asset
                     footerAsset?: Asset
                     wordAsset?: Asset
+                    pdfAsset?: Asset
                   }> = []
 
                   if (config.slug === "letterhead") {
@@ -1326,6 +1409,9 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
                       const wordAsset = setAssets.find(
                         (a) => a.name.toLowerCase().includes("word") || a.formats.WORD
                       )
+                      const pdfAsset = setAssets.find(
+                        (a) => a.name.toLowerCase().includes("pdf") || a.formats.PDF
+                      )
 
                       const sample = headerAsset || footerAsset || wordAsset || setAssets[0]
 
@@ -1351,7 +1437,8 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
                         companyName: compName,
                         headerAsset: headerAsset || setAssets[0],
                         footerAsset: footerAsset || setAssets[0],
-                        wordAsset: wordAsset || setAssets[0],
+                        wordAsset: wordAsset,
+                        pdfAsset: pdfAsset,
                       })
                     })
                   }
@@ -1440,6 +1527,7 @@ export function AssetPage({ config, initialAssets = [] }: AssetPageProps) {
                               headerAsset={set.headerAsset}
                               footerAsset={set.footerAsset}
                               wordAsset={set.wordAsset}
+                              pdfAsset={set.pdfAsset}
                               categoryTitle={catConfig?.title || "Letterhead Set"}
                               titleNumber={set.titleNumber}
                               titleName={set.titleName}

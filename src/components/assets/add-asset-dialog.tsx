@@ -110,6 +110,7 @@ export function AddAssetDialog({ config, onAdd, categoryOverride, defaultTitleNu
   const [headerJpg, setHeaderJpg] = React.useState<File | null>(null)
   const [footerJpg, setFooterJpg] = React.useState<File | null>(null)
   const [headerWord, setHeaderWord] = React.useState<File | null>(null)
+  const [headerPdf, setHeaderPdf] = React.useState<File | null>(null)
   
   const createEmptyTile = (): AssetTileState => ({
     id: crypto.randomUUID(),
@@ -179,6 +180,7 @@ export function AddAssetDialog({ config, onAdd, categoryOverride, defaultTitleNu
       setHeaderJpg(null)
       setFooterJpg(null)
       setHeaderWord(null)
+      setHeaderPdf(null)
       setIsSubmitting(false)
     }
   }, [open, config.title, categoryOverride, defaultTitleNumber, assets])
@@ -237,15 +239,15 @@ export function AddAssetDialog({ config, onAdd, categoryOverride, defaultTitleNu
         toast.error("Please enter the Company Name.")
         return
       }
-      if (!headerJpg && !footerJpg && !headerWord) {
-        toast.error("Please upload at least one format file (Header JPG, Footer JPG, or Header Word).")
+      if (!headerJpg && !footerJpg && !headerWord && !headerPdf) {
+        toast.error("Please upload at least one format file (Header JPG, Footer JPG, Header Word, or PDF).")
         return
       }
 
       setIsSubmitting(true)
 
       const setId = crypto.randomUUID()
-      const newTiles = []
+      const newTiles: any[] = []
       if (headerJpg) {
         newTiles.push({
           id: crypto.randomUUID(),
@@ -298,6 +300,25 @@ export function AddAssetDialog({ config, onAdd, categoryOverride, defaultTitleNu
             SVG: { file: null, previewUrl: null },
             PDF: { file: null, previewUrl: null },
             WORD: { file: headerWord, previewUrl: null },
+            CDR: { file: null, previewUrl: null },
+            PPT: { file: null, previewUrl: null },
+          }
+        })
+      }
+      if (headerPdf) {
+        newTiles.push({
+          id: crypto.randomUUID(),
+          name: `${companyName} PDF`,
+          titleNumber,
+          titleName,
+          companyName,
+          setId,
+          files: {
+            JPG: { file: null, previewUrl: null },
+            PNG: { file: null, previewUrl: null },
+            SVG: { file: null, previewUrl: null },
+            PDF: { file: headerPdf, previewUrl: null },
+            WORD: { file: null, previewUrl: null },
             CDR: { file: null, previewUrl: null },
             PPT: { file: null, previewUrl: null },
           }
@@ -479,8 +500,8 @@ export function AddAssetDialog({ config, onAdd, categoryOverride, defaultTitleNu
                 />
               </div>
 
-              {/* 4) 3 Upload options with increased text size */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+              {/* 4) 4 Upload options: Header JPG, Footer JPG, Header Word, and PDF */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 <div className="flex flex-col gap-2 text-left">
                   <FileDropzone 
                     type="JPG" 
@@ -511,6 +532,17 @@ export function AddAssetDialog({ config, onAdd, categoryOverride, defaultTitleNu
                   />
                   <span className="text-sm font-bold text-foreground/85 text-center mt-1">
                     Upload Header Word
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 text-left">
+                  <FileDropzone 
+                    type="PDF" 
+                    fileState={{ file: headerPdf, previewUrl: null }} 
+                    onChange={setHeaderPdf} 
+                  />
+                  <span className="text-sm font-bold text-foreground/85 text-center mt-1">
+                    Upload PDF
                   </span>
                 </div>
               </div>
